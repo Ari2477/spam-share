@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded'); // Debug log
+    
     // DOM Elements
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
@@ -10,17 +12,28 @@ document.addEventListener('DOMContentLoaded', function() {
     initApp();
 
     function initApp() {
+        console.log('Initializing app...'); // Debug log
         setupEventListeners();
         updateStats();
         addLog('System initialized. Ready to start boosting.', 'info');
     }
 
     function setupEventListeners() {
-        // Menu Toggle
+        console.log('Setting up event listeners...'); // Debug log
+        
+        // Menu Toggle - FIXED
         if (menuToggle) {
-            menuToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
+            console.log('Menu toggle found, adding click listener');
+            menuToggle.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Menu toggle clicked');
+                if (sidebar) {
+                    sidebar.classList.toggle('active');
+                    console.log('Sidebar active:', sidebar.classList.contains('active'));
+                }
             });
+        } else {
+            console.log('Menu toggle NOT found');
         }
 
         // Close sidebar when clicking outside on mobile
@@ -32,11 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 !menuToggle.contains(event.target) &&
                 sidebar.classList.contains('active')) {
                 sidebar.classList.remove('active');
+                console.log('Sidebar closed by clicking outside');
             }
         });
 
-        // Modal Functions
+        // Modal Functions - Make them global
         window.openModal = function(modalId) {
+            console.log('Opening modal:', modalId);
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'flex';
@@ -46,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         window.closeModal = function(modalId) {
+            console.log('Closing modal:', modalId);
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'none';
@@ -63,11 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Modal Links
+        // Modal Links - FIXED
         document.querySelectorAll('[id$="Link"]').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const modalId = this.id.replace('Link', 'Modal');
+                console.log('Modal link clicked:', this.id, '->', modalId);
                 openModal(modalId);
             });
         });
@@ -85,8 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Share Form Handling
         const shareForm = document.getElementById('shareForm');
         if (shareForm) {
+            console.log('Share form found');
             shareForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                console.log('Share form submitted');
                 
                 const cookie = document.getElementById('cookie')?.value.trim();
                 const postLink = document.getElementById('postLink')?.value.trim();
@@ -114,6 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 resetProgress();
                 
                 try {
+                    console.log('Sending share request...');
                     const response = await fetch('/api/share', {
                         method: 'POST',
                         headers: {
@@ -128,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     const data = await response.json();
+                    console.log('Share response:', data);
                     
                     if (data.status) {
                         currentProcessId = data.processId;
@@ -141,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         resetForm();
                     }
                 } catch (error) {
+                    console.error('Fetch error:', error);
                     addLog(`Network error: ${error.message}`, 'error');
                     resetForm();
                 }
@@ -266,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (failedCount) failedCount.textContent = process.failed || 0;
             
             // Add log entry for significant progress
-            if (process.current % 10 === 0) {
+            if (process.current % 10 === 0 || process.current === process.total) {
                 addLog(`Progress: ${process.current}/${process.total} (${process.success} successful)`, 'info');
             }
         }
