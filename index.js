@@ -15,12 +15,8 @@ app.use(session({
   secret: 'facebook-booster-secret-key',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Set to true if using HTTPS
+  cookie: { secure: false }
 }));
-
-// View engine setup
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 // Mock database for storing history and stats
 const userHistory = {};
@@ -58,16 +54,13 @@ function extract_token(cookie, ua) {
   }
 }
 
-// Home page route
+// Serve main HTML files
 app.get("/", (req, res) => {
-  res.render("index", { stats });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Share Tool page route
 app.get("/share", (req, res) => {
-  const sessionId = req.sessionID;
-  const history = userHistory[sessionId] || [];
-  res.render("share", { history, stats });
+  res.sendFile(path.join(__dirname, 'public', 'share.html'));
 });
 
 // API endpoint for sharing
@@ -241,4 +234,5 @@ async function processShares(processId, session, params) {
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  console.log(`Visit: http://localhost:${port}`);
 });
