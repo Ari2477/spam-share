@@ -684,3 +684,127 @@ body {
         margin: 10px;
     }
 }
+
+/* Add these styles at the end of your styles.css file */
+
+/* Debug styles - remove these after testing */
+.debug {
+    border: 1px solid red !important;
+}
+
+/* Ensure menu toggle is visible on mobile */
+@media (max-width: 992px) {
+    .menu-toggle {
+        display: flex !important;
+        z-index: 1003;
+    }
+    
+    .sidebar {
+        z-index: 1002;
+    }
+}
+
+/* Fix for modal close button */
+.close-modal {
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: white;
+    background: none;
+    border: none;
+    padding: 0 10px;
+    line-height: 1;
+}
+
+/* Fix for stats grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-detail {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-detail h3 {
+    margin-bottom: 10px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/* Fix for history items */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.history-link {
+    word-break: break-all;
+    margin: 10px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Fix for action buttons in modals */
+.history-actions .btn {
+    margin: 0;
+}
+
+/* Fix for form controls */
+.form-group input:disabled,
+.form-group textarea:disabled,
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading spinner animation */
+.fa-spinner.fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ensure content doesn't overflow */
+.modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Fix for mobile view */
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .header p {
+        font-size: 0.9rem;
+    }
+    
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .stat-info p {
+        font-size: 1.5rem;
+    }
+}
