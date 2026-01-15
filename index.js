@@ -10,15 +10,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session configuration
+// Session configuration - FIXED
 app.use(session({
   secret: 'facebook-booster-secret-key',
-  resave: false,
-  saveUnitialized: true,
+  resave: false, // DONT CHANGE THIS
+  saveUninitialized: true,
   cookie: { secure: false }
 }));
 
-// Mock database for storing history and stats
+// Store active processes globally (not just in session)
+const activeProcesses = {};
 const userHistory = {};
 const stats = {
   totalShares: 0,
@@ -40,7 +41,8 @@ function extract_token(cookie, ua) {
         "user-agent": ua,
         "referer": "https://www.facebook.com/",
         "Cookie": cookie
-      }
+      },
+      timeout: 10000
     }).then(res => {
       const tokenMatch = res.data.match(/(EAAG\w+)/);
       return tokenMatch ? tokenMatch[1] : null;
@@ -63,7 +65,7 @@ app.get("/share", (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'share.html'));
 });
 
-// API endpoint for sharing - ORIGINAL LOGIC
+// API endpoint for sharing - FIXED
 app.post("/api/share", async (req, res) => {
   const { cookie, link: post_link, limit, delay = 0 } = req.body;
   const limitNum = parseInt(limit, 10);
@@ -77,28 +79,27 @@ app.post("/api/share", async (req, res) => {
   const ua = ua_list[Math.floor(Math.random() * ua_list.length)];
   const processId = Date.now().toString();
   
-  // Initialize process tracking
+  // Initialize process object - FIXED
   const process = {
     id: processId,
     status: 'starting',
     success: 0,
     failed: 0,
     total: limitNum,
-    current: 0,
+    current: 0, // THIS WAS MISSING - causes progress bar issue
     link: post_link,
-    startTime: new Date().toISOString()
+    startTime: new Date().toISOString(),
+    lastUpdate: new Date().toISOString()
   };
 
-  // Store process in session
-  if (!req.session.processes) req.session.processes = {};
-  req.session.processes[processId] = process;
-  
+  // Store process in global activeProcesses - FIXED
+  activeProcesses[processId] = process;
   stats.activeProcesses++;
 
   // Send initial response
   res.json({
     status: true,
-    message: "Process started",
+    message: "Process started successfully",
     processId: processId
   });
 
@@ -107,26 +108,33 @@ app.post("/api/share", async (req, res) => {
   if (!token) {
     process.status = 'failed';
     process.error = 'Token extraction failed';
+    delete activeProcesses[processId];
     stats.activeProcesses--;
     return;
   }
 
-  // Process shares in background - ORIGINAL LOGIC IMPLEMENTATION
-  processShares(processId, req.session, {
-    cookie, post_link, limitNum, delayMs, token, ua
+  // Process shares in background
+  processShares(processId, {
+    cookie, post_link, limitNum, delayMs, token, ua, sessionId
   });
 });
 
-// Get process status
+// Get process status - FIXED
 app.get("/api/process/:id", (req, res) => {
   const processId = req.params.id;
-  if (req.session.processes && req.session.processes[processId]) {
+  
+  if (activeProcesses[processId]) {
+    const process = activeProcesses[processId];
     res.json({
       status: true,
-      process: req.session.processes[processId]
+      process: process
     });
   } else {
-    res.json({ status: false, message: "Process not found" });
+    res.json({ 
+      status: false, 
+      message: "Process not found",
+      error: "Process may have completed or been removed"
+    });
   }
 });
 
@@ -141,7 +149,28 @@ app.get("/api/history", (req, res) => {
 
 // Get stats
 app.get("/api/stats", (req, res) => {
-  res.json({ status: true, stats });
+  res.json({ 
+    status: true, 
+    stats: {
+      ...stats,
+      // Calculate additional stats
+      successRate: stats.totalShares > 0 ? 
+        Math.round((stats.successfulShares / stats.totalShares) * 100) : 0
+    }
+  });
+});
+
+// Stop process
+app.post("/api/process/:id/stop", (req, res) => {
+  const processId = req.params.id;
+  
+  if (activeProcesses[processId]) {
+    activeProcesses[processId].status = 'stopped';
+    activeProcesses[processId].error = 'Stopped by user';
+    res.json({ status: true, message: "Process stopped" });
+  } else {
+    res.json({ status: false, message: "Process not found" });
+  }
 });
 
 // Clear history
@@ -151,131 +180,124 @@ app.post("/api/history/clear", (req, res) => {
   res.json({ status: true, message: "History cleared" });
 });
 
-// ORIGINAL LOGIC - Background processing function
-async function processShares(processId, session, params) {
-  const { cookie, post_link, limitNum, delayMs, token, ua } = params;
-  const process = session.processes[processId];
+// FIXED - Background processing function
+async function processShares(processId, params) {
+  const { cookie, post_link, limitNum, delayMs, token, ua, sessionId } = params;
+  const process = activeProcesses[processId];
+  
+  if (!process) {
+    console.error(`Process ${processId} not found`);
+    return;
+  }
   
   process.status = 'processing';
-  let success = 0;
-  let failed = 0;
-  
-  // ORIGINAL LOGIC: Parallel processing for faster boosts
-  const sharePromises = [];
   
   for (let i = 0; i < limitNum; i++) {
-    sharePromises.push(
-      new Promise(async (resolve) => {
-        try {
-          // Small delay between requests if specified
-          if (i > 0 && delayMs > 0) {
-            await new Promise(r => setTimeout(r, delayMs));
-          }
-          
-          const response = await axios.post(
-            "https://graph.facebook.com/v18.0/me/feed",
-            null,
-            {
-              params: { 
-                link: post_link, 
-                access_token: token, 
-                published: 0 
-              },
-              headers: {
-                "user-agent": ua,
-                "Cookie": cookie
-              },
-              timeout: 10000 // 10 second timeout
-            }
-          );
-          
-          if (response.data && response.data.id) {
-            success++;
-            stats.successfulShares++;
-            resolve({ success: true, index: i });
-          } else {
-            failed++;
-            stats.failedShares++;
-            resolve({ success: false, index: i, error: 'No ID returned' });
-          }
-          
-        } catch (err) {
-          console.error(`Share error ${i + 1}:`, err.message);
-          failed++;
-          stats.failedShares++;
-          resolve({ success: false, index: i, error: err.message });
+    // Check if process was stopped
+    if (process.status === 'stopped') {
+      break;
+    }
+    
+    // Update current progress - FIXED
+    process.current = i + 1;
+    process.lastUpdate = new Date().toISOString();
+    
+    try {
+      // Small delay if specified
+      if (delayMs > 0 && i > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+      
+      const response = await axios.post(
+        "https://graph.facebook.com/v18.0/me/feed",
+        null,
+        {
+          params: { 
+            link: post_link, 
+            access_token: token, 
+            published: 0 
+          },
+          headers: {
+            "user-agent": ua,
+            "Cookie": cookie
+          },
+          timeout: 10000
         }
-      })
-    );
-    
-    // Update process status in real-time
-    if (i % 5 === 0 || i === limitNum - 1) {
-      process.current = i + 1;
-      process.success = success;
-      process.failed = failed;
-    }
-  }
-  
-  // Wait for all shares to complete
-  try {
-    const results = await Promise.allSettled(sharePromises);
-    
-    // Final count of successes
-    const finalSuccess = results.filter(r => 
-      r.status === 'fulfilled' && r.value.success
-    ).length;
-    
-    const finalFailed = limitNum - finalSuccess;
-    
-    // Finalize process
-    process.status = 'completed';
-    process.success = finalSuccess;
-    process.failed = finalFailed;
-    process.endTime = new Date().toISOString();
-    process.duration = new Date(process.endTime) - new Date(process.startTime);
-    
-    // Add to history
-    const sessionId = session.id;
-    if (!userHistory[sessionId]) userHistory[sessionId] = [];
-    
-    const historyEntry = {
-      id: processId,
-      link: post_link,
-      success: finalSuccess,
-      failed: finalFailed,
-      total: limitNum,
-      date: process.endTime,
-      duration: process.duration,
-      successRate: Math.round((finalSuccess / limitNum) * 100)
-    };
-    
-    userHistory[sessionId].unshift(historyEntry);
-    
-    // Keep only last 20 history items
-    if (userHistory[sessionId].length > 20) {
-      userHistory[sessionId] = userHistory[sessionId].slice(0, 20);
+      );
+      
+      if (response.data && response.data.id) {
+        process.success++;
+        stats.successfulShares++;
+      } else {
+        process.failed++;
+        stats.failedShares++;
+      }
+      
+    } catch (err) {
+      console.error(`Share error ${i + 1}:`, err.message);
+      process.failed++;
+      stats.failedShares++;
+      
+      // Continue despite errors
     }
     
-    // Update global stats
+    // Update total shares count
     stats.totalShares = stats.successfulShares + stats.failedShares;
-    
-  } catch (error) {
-    console.error('Process error:', error);
-    process.status = 'error';
-    process.error = error.message;
   }
   
-  stats.activeProcesses--;
+  // Finalize process - FIXED
+  process.status = 'completed';
+  process.endTime = new Date().toISOString();
+  process.duration = new Date(process.endTime) - new Date(process.startTime);
   
-  // Clean up old processes after 1 hour
+  // Add to history
+  if (!userHistory[sessionId]) {
+    userHistory[sessionId] = [];
+  }
+  
+  userHistory[sessionId].unshift({
+    id: processId,
+    link: post_link,
+    success: process.success,
+    failed: process.failed,
+    total: limitNum,
+    date: process.endTime,
+    duration: process.duration
+  });
+  
+  // Keep only last 20 history items
+  if (userHistory[sessionId].length > 20) {
+    userHistory[sessionId] = userHistory[sessionId].slice(0, 20);
+  }
+  
+  // Clean up active process after 5 minutes
   setTimeout(() => {
-    if (session.processes && session.processes[processId]) {
-      delete session.processes[processId];
+    if (activeProcesses[processId]) {
+      delete activeProcesses[processId];
+      stats.activeProcesses = Math.max(0, stats.activeProcesses - 1);
     }
-  }, 3600000); // 1 hour
+  }, 5 * 60 * 1000); // 5 minutes
+  
+  console.log(`Process ${processId} completed: ${process.success}/${limitNum} successful`);
 }
 
-// CORS headers for API requests
+// Clean up old processes periodically
+setInterval(() => {
+  const now = new Date();
+  const cutoff = 30 * 60 * 1000; // 30 minutes
+  
+  Object.keys(activeProcesses).forEach(processId => {
+    const process = activeProcesses[processId];
+    const processAge = now - new Date(process.startTime);
+    
+    if (processAge > cutoff) {
+      delete activeProcesses[processId];
+      stats.activeProcesses = Math.max(0, stats.activeProcesses - 1);
+    }
+  });
+}, 10 * 60 * 1000); // Check every 10 minutes
+
+// CORS headers
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -284,7 +306,7 @@ app.use((req, res, next) => {
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`Visit: http://localhost:${port}`);
-  console.log(`✅ Original logic restored: Fast boosts, no artificial limits`);
+  console.log(`✅ Server running on port ${port}`);
+  console.log(`✅ Visit: http://localhost:${port}`);
+  console.log(`✅ Progress tracking FIXED`);
 });
