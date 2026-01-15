@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Booster - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Mobile Menu Toggle -->
+        <div class="menu-toggle" id="menuToggle">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo">
+                <i class="fab fa-facebook"></i>
+                <h2>FB Booster</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item active">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="share.html" class="nav-item">
+                    <i class="fas fa-share-alt"></i> Share Tool
+                </a>
+                <a href="#guide" id="guideLink" class="nav-item">
+                    <i class="fas fa-book"></i> Guide
+                </a>
+                <a href="#history" id="historyLink" class="nav-item">
+                    <i class="fas fa-history"></i> History
+                </a>
+                <a href="#stats" id="statsLink" class="nav-item">
+                    <i class="fas fa-chart-bar"></i> Stats
+                </a>
+                <a href="#process" id="processLink" class="nav-item">
+                    <i class="fas fa-cogs"></i> Active Processes
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>v1.0.0</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="header">
+                <h1>Facebook Post Share Booster</h1>
+                <p>Increase your post visibility with automated sharing</p>
+            </header>
+
+            <div class="content-area" id="contentArea">
+                <!-- Dashboard Content -->
+                <div class="dashboard">
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: #4CAF50;">
+                                <i class="fas fa-share"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Total Shares</h3>
+                                <p id="totalShares">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: #2196F3;">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Successful</h3>
+                                <p id="successfulShares">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: #f44336;">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Failed</h3>
+                                <p id="failedShares">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background-color: #FF9800;">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Active Processes</h3>
+                                <p id="activeProcesses">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h2>Quick Actions</h2>
+                        <div class="action-buttons">
+                            <a href="share.html" class="action-btn">
+                                <i class="fas fa-rocket"></i>
+                                <span>Start Sharing</span>
+                            </a>
+                            <button class="action-btn" id="refreshStats">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Refresh Stats</span>
+                            </button>
+                            <button class="action-btn" id="viewHistory">
+                                <i class="fas fa-history"></i>
+                                <span>View History</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="guide-preview">
+                        <h2>Quick Guide</h2>
+                        <div class="guide-content">
+                            <p><strong>How to use:</strong></p>
+                            <ol>
+                                <li>Go to "Share Tool" page</li>
+                                <li>Enter your Facebook cookie (from browser)</li>
+                                <li>Paste the post link you want to boost</li>
+                                <li>Set the number of shares (limit)</li>
+                                <li>Set delay between shares (default: 1ms)</li>
+                                <li>Click "Start Boosting"</li>
+                                <li>Monitor progress in real-time</li>
+                            </ol>
+                            <p class="warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Use responsibly and in compliance with Facebook's Terms of Service.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlays -->
+    <div id="guideModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Complete User Guide</h2>
+            <div class="modal-body">
+                <h3>Getting Facebook Cookie</h3>
+                <ol>
+                    <li>Login to Facebook in your browser</li>
+                    <li>Open Developer Tools (F12)</li>
+                    <li>Go to Application/Storage tab</li>
+                    <li>Find Cookies section</li>
+                    <li>Copy the value of the "c_user" and "xs" cookies</li>
+                    <li>Format: c_user=XXXX; xs=XXXX</li>
+                </ol>
+                
+                <h3>Finding Post Links</h3>
+                <p>Copy the URL from any Facebook post you want to boost.</p>
+                
+                <h3>Settings Explanation</h3>
+                <ul>
+                    <li><strong>Delay:</strong> Time between each share request (recommended: 1-100ms)</li>
+                    <li><strong>Limit:</strong> Maximum number of shares to attempt</li>
+                    <li><strong>Cookie:</strong> Your Facebook authentication cookie</li>
+                </ul>
+                
+                <h3>Best Practices</h3>
+                <ul>
+                    <li>Start with small limits (10-50) to test</li>
+                    <li>Use delays to avoid detection</li>
+                    <li>Monitor the process tab for real-time updates</li>
+                    <li>Clear history regularly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Share History</h2>
+            <div class="modal-body">
+                <div class="history-actions">
+                    <button id="clearHistory" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Clear History
+                    </button>
+                    <button id="refreshHistory" class="btn btn-secondary">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div id="historyList" class="history-list">
+                    <p class="loading">Loading history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Detailed Statistics</h2>
+            <div class="modal-body">
+                <div id="statsDetails">
+                    <p class="loading">Loading statistics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Active Processes</h2>
+            <div class="modal-body">
+                <div id="processList">
+                    <p class="loading">Loading active processes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
