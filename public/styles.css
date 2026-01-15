@@ -1,4 +1,3 @@
-/* Reset for Mobile */
 * {
     margin: 0;
     padding: 0;
@@ -54,7 +53,6 @@ body {
     width: 100%;
 }
 
-/* Safe Area for Notch */
 @supports (padding: max(0px)) {
     body {
         padding-top: env(safe-area-inset-top);
@@ -64,7 +62,6 @@ body {
     }
 }
 
-/* Header */
 .header {
     position: fixed;
     top: 0;
@@ -1177,7 +1174,6 @@ button:active, .action-card:active, .nav-item:active, .menu-item:active, .user-c
     overscroll-behavior: contain;
 }
 
-/* Reduce motion for performance */
 .reduce-motion *,
 .reduce-motion *::before,
 .reduce-motion *::after {
@@ -1186,12 +1182,10 @@ button:active, .action-card:active, .nav-item:active, .menu-item:active, .user-c
     transition-duration: 0.01ms !important;
 }
 
-/* Enhanced Range Slider for Unlimited Values */
 #shareLimit {
     background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--value-percent, 30%), var(--gray-light) var(--value-percent, 30%) 100%);
 }
 
-/* Custom Scrollbar */
 .main-content::-webkit-scrollbar {
     width: 6px;
 }
@@ -1209,7 +1203,6 @@ button:active, .action-card:active, .nav-item:active, .menu-item:active, .user-c
     background: var(--primary-dark);
 }
 
-/* Better Touch Feedback */
 button:active, 
 .action-card:active,
 .nav-item:active,
@@ -1219,13 +1212,11 @@ button:active,
     transition: transform 0.1s ease !important;
 }
 
-/* Loading States */
 .loading {
     pointer-events: none;
     opacity: 0.7;
 }
 
-/* Unlimited Range Labels */
 .range-labels {
     font-size: 0.8rem;
 }
@@ -1237,7 +1228,6 @@ button:active,
     transition: all 0.2s ease;
 }
 
-/* Performance Optimizations */
 * {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -1249,7 +1239,6 @@ video {
     height: auto;
 }
 
-/* Battery Saving Mode */
 @media (prefers-reduced-motion: reduce) {
     * {
         animation: none !important;
@@ -1257,7 +1246,6 @@ video {
     }
 }
 
-/* Unlimited Sharing Styles */
 #shareLimit {
     width: 100%;
     height: 12px;
@@ -1288,7 +1276,6 @@ video {
     box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
 }
 
-/* Infinite Mode Styles */
 .infinite-mode #progressFill {
     background: linear-gradient(90deg, 
         #667eea 0%, 
@@ -1306,7 +1293,6 @@ video {
     100% { background-position: 0 0; }
 }
 
-/* Large Number Display */
 .large-number {
     font-size: 1.5rem;
     font-weight: 800;
@@ -1316,7 +1302,6 @@ video {
     background-clip: text;
 }
 
-/* Batch Progress */
 .batch-progress {
     display: flex;
     gap: 5px;
@@ -1351,13 +1336,11 @@ video {
     50% { transform: scale(1.5); opacity: 0.7; }
 }
 
-/* Performance Optimizations */
 .unlimited-container {
     will-change: transform;
     contain: content;
 }
 
-/* Mobile Touch Improvements */
 @media (max-width: 768px) {
     .unlimited-controls {
         flex-wrap: wrap;
@@ -1380,7 +1363,6 @@ video {
     }
 }
 
-/* Dark Theme Adjustments */
 [data-theme="dark"] .unlimited-input {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
@@ -1396,15 +1378,11 @@ video {
     color: var(--text-color);
 }
 
-/* High Performance Mode */
 .high-performance * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
 }
 
-/* Add to existing CSS */
-
-/* Smooth Scroll Fix */
 html {
     scroll-behavior: smooth;
 }
@@ -1414,7 +1392,6 @@ body, .main-content {
     overscroll-behavior: contain;
 }
 
-/* Button Fixes - Make sure all buttons are clickable */
 button, 
 .btn, 
 .icon-btn, 
@@ -1430,7 +1407,6 @@ button,
     user-select: none;
 }
 
-/* Fix for mobile touch */
 @media (max-width: 768px) {
     button, 
     .btn, 
@@ -1445,7 +1421,6 @@ button,
     }
 }
 
-/* Active States for Feedback */
 button:active,
 .btn:active,
 .icon-btn:active,
@@ -1457,7 +1432,6 @@ button:active,
     transform: scale(0.98);
 }
 
-/* Fix for Range Slider on Mobile */
 input[type="range"] {
     -webkit-appearance: none;
     touch-action: pan-y;
@@ -1468,7 +1442,6 @@ input[type="range"]::-webkit-slider-thumb {
     touch-action: pan-y;
 }
 
-/* Modal Fix */
 .modal {
     touch-action: pan-y;
 }
@@ -1479,7 +1452,6 @@ input[type="range"]::-webkit-slider-thumb {
     -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent text selection on interactive elements */
 button, 
 .btn, 
 .icon-btn, 
@@ -1492,26 +1464,22 @@ button,
     user-select: none;
 }
 
-/* Loading Overlay Fix */
 .loading-overlay {
     touch-action: none;
 }
 
-/* History List Scroll */
 .history-list {
     max-height: 60vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Log Box Scroll */
 .log-box {
     max-height: 200px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Remove default button styles */
 button {
     background: none;
     border: none;
@@ -1520,24 +1488,21 @@ button {
     margin: 0;
 }
 
-/* Fix for iOS Safari */
 @supports (-webkit-touch-callout: none) {
     .main-content {
         -webkit-overflow-scrolling: touch;
     }
     
     input, textarea, select {
-        font-size: 16px; /* Prevents zoom on focus in iOS */
+        font-size: 16px;
     }
 }
 
-/* Performance Optimizations */
 * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fix for Android Chrome */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
     select,
     textarea,
@@ -1546,7 +1511,6 @@ button {
     }
 }
 
-/* Remove outline but keep accessibility */
 button:focus,
 .btn:focus,
 .icon-btn:focus {
@@ -1554,7 +1518,6 @@ button:focus,
     outline-offset: 2px;
 }
 
-/* Disabled state */
 button:disabled,
 .btn:disabled {
     opacity: 0.5;
