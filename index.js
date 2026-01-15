@@ -14,7 +14,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: 'facebook-booster-secret-key',
   resave: false,
-  saveUninitialized: true,
+  saveUnitialized: true,
   cookie: { secure: false }
 }));
 
@@ -63,9 +63,9 @@ app.get("/share", (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'share.html'));
 });
 
-// API endpoint for sharing
+// API endpoint for sharing - ORIGINAL LOGIC
 app.post("/api/share", async (req, res) => {
-  const { cookie, link: post_link, limit, delay = 1 } = req.body;
+  const { cookie, link: post_link, limit, delay = 0 } = req.body;
   const limitNum = parseInt(limit, 10);
   const delayMs = parseInt(delay, 10);
 
@@ -111,7 +111,7 @@ app.post("/api/share", async (req, res) => {
     return;
   }
 
-  // Process shares in background
+  // Process shares in background - ORIGINAL LOGIC IMPLEMENTATION
   processShares(processId, req.session, {
     cookie, post_link, limitNum, delayMs, token, ua
   });
@@ -151,84 +151,128 @@ app.post("/api/history/clear", (req, res) => {
   res.json({ status: true, message: "History cleared" });
 });
 
-// Background processing function
+// ORIGINAL LOGIC - Background processing function
 async function processShares(processId, session, params) {
   const { cookie, post_link, limitNum, delayMs, token, ua } = params;
   const process = session.processes[processId];
   
   process.status = 'processing';
   let success = 0;
+  let failed = 0;
+  
+  // ORIGINAL LOGIC: Parallel processing for faster boosts
+  const sharePromises = [];
   
   for (let i = 0; i < limitNum; i++) {
-    process.current = i + 1;
-    
-    try {
-      // Delay between requests
-      if (i > 0 && delayMs > 0) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-      
-      const response = await axios.post(
-        "https://graph.facebook.com/v18.0/me/feed",
-        null,
-        {
-          params: { link: post_link, access_token: token, published: 0 },
-          headers: {
-            "user-agent": ua,
-            "Cookie": cookie
+    sharePromises.push(
+      new Promise(async (resolve) => {
+        try {
+          // Small delay between requests if specified
+          if (i > 0 && delayMs > 0) {
+            await new Promise(r => setTimeout(r, delayMs));
           }
+          
+          const response = await axios.post(
+            "https://graph.facebook.com/v18.0/me/feed",
+            null,
+            {
+              params: { 
+                link: post_link, 
+                access_token: token, 
+                published: 0 
+              },
+              headers: {
+                "user-agent": ua,
+                "Cookie": cookie
+              },
+              timeout: 10000 // 10 second timeout
+            }
+          );
+          
+          if (response.data && response.data.id) {
+            success++;
+            stats.successfulShares++;
+            resolve({ success: true, index: i });
+          } else {
+            failed++;
+            stats.failedShares++;
+            resolve({ success: false, index: i, error: 'No ID returned' });
+          }
+          
+        } catch (err) {
+          console.error(`Share error ${i + 1}:`, err.message);
+          failed++;
+          stats.failedShares++;
+          resolve({ success: false, index: i, error: err.message });
         }
-      );
-      
-      if (response.data.id) {
-        success++;
-        process.success = success;
-        stats.successfulShares++;
-      } else {
-        process.failed++;
-        stats.failedShares++;
-      }
-      
-    } catch (err) {
-      console.error('Share error:', err.message);
-      process.failed++;
-      stats.failedShares++;
-      
-      // If too many errors, stop the process
-      if (process.failed > 5) {
-        process.status = 'stopped';
-        process.error = 'Too many errors occurred';
-        break;
-      }
-    }
+      })
+    );
     
-    // Update stats
-    stats.totalShares = stats.successfulShares + stats.failedShares;
+    // Update process status in real-time
+    if (i % 5 === 0 || i === limitNum - 1) {
+      process.current = i + 1;
+      process.success = success;
+      process.failed = failed;
+    }
   }
   
-  // Finalize process
-  process.status = 'completed';
-  process.endTime = new Date().toISOString();
-  process.duration = new Date(process.endTime) - new Date(process.startTime);
-  
-  // Add to history
-  const sessionId = session.id;
-  if (!userHistory[sessionId]) userHistory[sessionId] = [];
-  userHistory[sessionId].unshift({
-    id: processId,
-    link: post_link,
-    success: process.success,
-    total: limitNum,
-    date: process.endTime,
-    duration: process.duration
-  });
-  
-  // Keep only last 20 history items
-  if (userHistory[sessionId].length > 20) {
-    userHistory[sessionId] = userHistory[sessionId].slice(0, 20);
+  // Wait for all shares to complete
+  try {
+    const results = await Promise.allSettled(sharePromises);
+    
+    // Final count of successes
+    const finalSuccess = results.filter(r => 
+      r.status === 'fulfilled' && r.value.success
+    ).length;
+    
+    const finalFailed = limitNum - finalSuccess;
+    
+    // Finalize process
+    process.status = 'completed';
+    process.success = finalSuccess;
+    process.failed = finalFailed;
+    process.endTime = new Date().toISOString();
+    process.duration = new Date(process.endTime) - new Date(process.startTime);
+    
+    // Add to history
+    const sessionId = session.id;
+    if (!userHistory[sessionId]) userHistory[sessionId] = [];
+    
+    const historyEntry = {
+      id: processId,
+      link: post_link,
+      success: finalSuccess,
+      failed: finalFailed,
+      total: limitNum,
+      date: process.endTime,
+      duration: process.duration,
+      successRate: Math.round((finalSuccess / limitNum) * 100)
+    };
+    
+    userHistory[sessionId].unshift(historyEntry);
+    
+    // Keep only last 20 history items
+    if (userHistory[sessionId].length > 20) {
+      userHistory[sessionId] = userHistory[sessionId].slice(0, 20);
+    }
+    
+    // Update global stats
+    stats.totalShares = stats.successfulShares + stats.failedShares;
+    
+  } catch (error) {
+    console.error('Process error:', error);
+    process.status = 'error';
+    process.error = error.message;
   }
   
   stats.activeProcesses--;
+  
+  // Clean up old processes after 1 hour
+  setTimeout(() => {
+    if (session.processes && session.processes[processId]) {
+      delete session.processes[processId];
+    }
+  }, 3600000); // 1 hour
 }
 
 // CORS headers for API requests
@@ -242,4 +286,5 @@ const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Visit: http://localhost:${port}`);
+  console.log(`✅ Original logic restored: Fast boosts, no artificial limits`);
 });
