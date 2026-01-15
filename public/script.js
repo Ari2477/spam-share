@@ -30,7 +30,6 @@ class MobileShareTool {
     setupEventListeners() {
         console.log('Setting up event listeners...');
         
-        // Menu Toggle
         const menuBtn = document.getElementById('menuBtn');
         const closeMenu = document.getElementById('closeMenu');
         
@@ -42,13 +41,11 @@ class MobileShareTool {
             closeMenu.addEventListener('click', () => this.toggleMenu(false));
         }
 
-        // Theme Toggle
         const themeBtn = document.getElementById('themeBtn');
         if (themeBtn) {
             themeBtn.addEventListener('click', () => this.toggleTheme());
         }
 
-        // Navigation
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -74,7 +71,6 @@ class MobileShareTool {
             });
         });
 
-        // Share Tool
         const shareLimit = document.getElementById('shareLimit');
         const limitValue = document.getElementById('limitValue');
         const startBtn = document.getElementById('startBtn');
@@ -111,7 +107,6 @@ class MobileShareTool {
             });
         }
 
-        // Users Management
         const addUserBtn = document.getElementById('addUserBtn');
         const saveUserBtn = document.getElementById('saveUserBtn');
         
@@ -127,14 +122,12 @@ class MobileShareTool {
             });
         }
 
-        // Close Modal Buttons
         document.querySelectorAll('.close-modal').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.closeUserModal();
             });
         });
 
-        // Modal outside click
         const userModal = document.getElementById('userModal');
         if (userModal) {
             userModal.addEventListener('click', (e) => {
@@ -144,7 +137,6 @@ class MobileShareTool {
             });
         }
 
-        // History Filters
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -156,10 +148,8 @@ class MobileShareTool {
             });
         });
 
-        // Add Refresh Button
         this.addRefreshButton();
-        
-        // Add Speed Controls
+
         this.addSpeedControls();
         
         console.log('Event listeners setup complete');
@@ -781,25 +771,20 @@ class MobileShareTool {
         if (resetBtn) {
             resetBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
         }
-        
-        // Start without loading overlay
+
         this.addLog('🚀 STARTING SHARING PROCESS', 'info');
         this.addLog(`👤 Account: ${user.name}`, 'info');
         this.addLog(`🔗 Link: ${this.truncateText(postLink, 50)}`, 'info');
         this.addLog(`🎯 Target: ${this.formatNumber(limit)} shares`, 'info');
         this.addLog(`⚡ Speed: ${this.speedSettings.mode} mode`, 'info');
 
-        // Start real-time progress
         this.startRealTimeProgress();
 
-        // Simulate sharing process
         setTimeout(async () => {
             try {
-                // Simulate API call
                 const successCount = Math.floor(Math.random() * limit * 0.8) + Math.floor(limit * 0.2);
                 const failedCount = limit - successCount;
-                
-                // Simulate progress updates
+
                 for (let i = 0; i <= 100; i++) {
                     if (!this.isSharing) break;
                     
@@ -812,14 +797,13 @@ class MobileShareTool {
                         }
                         
                         if (i === 100) {
-                            // Show success popup when complete
                             this.showResultPopup('success', 
                                 `Sharing completed successfully!\n` +
                                 `✅ ${successCount} successful shares\n` +
                                 `❌ ${failedCount} failed shares`
                             );
                             
-                            // Add to history
+                            
                             this.addHistory({
                                 user: user.name,
                                 link: postLink,
@@ -994,7 +978,6 @@ class MobileShareTool {
     }
 
     showResultPopup(type, message) {
-        // Create popup element
         const popup = document.createElement('div');
         popup.className = 'result-popup';
         popup.style.cssText = `
@@ -1023,14 +1006,12 @@ class MobileShareTool {
         `;
         
         document.body.appendChild(popup);
-        
-        // Animate in
+
         setTimeout(() => {
             popup.style.opacity = '1';
             popup.style.transform = 'translate(-50%, -50%) scale(1)';
         }, 10);
-        
-        // Auto remove after 3 seconds
+
         setTimeout(() => {
             popup.style.opacity = '0';
             popup.style.transform = 'translate(-50%, -50%) scale(0.8)';
@@ -1041,8 +1022,7 @@ class MobileShareTool {
                 }
             }, 300);
         }, 3000);
-        
-        // Also show in toast
+
         this.showToast(message.split('\n')[0], type);
     }
 
@@ -1112,8 +1092,7 @@ class MobileShareTool {
             logEntry.style.opacity = '1';
             logEntry.style.transform = 'translateX(0)';
         });
-        
-        // Save log to persistent storage
+
         this.saveLogToStorage({
             time: time,
             message: message,
@@ -1413,8 +1392,6 @@ class MobileShareTool {
     }
 
     showLoading(show, text = 'Processing...') {
-        // This function is kept for compatibility but overlay is removed
-        // Loading is now handled by the result popup
         if (show) {
             console.log('Loading:', text);
         }
@@ -1459,7 +1436,6 @@ class MobileShareTool {
         return text.substring(0, maxLength) + '...';
     }
 
-    // Local Storage Methods
     loadUsers() {
         try {
             const users = localStorage.getItem('mobileShareToolUsers');
@@ -1495,7 +1471,6 @@ class MobileShareTool {
     }
 }
 
-// Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new MobileShareTool();
     
