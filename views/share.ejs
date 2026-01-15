@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Tool - Facebook Booster</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Mobile Menu Toggle -->
+        <div class="menu-toggle" id="menuToggle">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo">
+                <i class="fab fa-facebook"></i>
+                <h2>FB Booster</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="/" class="nav-item">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="/share" class="nav-item active">
+                    <i class="fas fa-share-alt"></i> Share Tool
+                </a>
+                <a href="#" id="guideLink" class="nav-item">
+                    <i class="fas fa-book"></i> Guide
+                </a>
+                <a href="#" id="historyLink" class="nav-item">
+                    <i class="fas fa-history"></i> History
+                </a>
+                <a href="#" id="statsLink" class="nav-item">
+                    <i class="fas fa-chart-bar"></i> Stats
+                </a>
+                <a href="#" id="processLink" class="nav-item">
+                    <i class="fas fa-cogs"></i> Active Processes
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>v1.0.0</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="header">
+                <h1>Share Tool</h1>
+                <p>Boost any Facebook post by sharing it multiple times</p>
+            </header>
+
+            <div class="content-area">
+                <div class="tool-container">
+                    <form id="shareForm">
+                        <div class="form-group">
+                            <label for="cookie">
+                                <i class="fas fa-cookie-bite"></i> Facebook Cookie
+                            </label>
+                            <textarea 
+                                id="cookie" 
+                                placeholder="Enter your Facebook cookie (c_user=XXX; xs=XXX)"
+                                rows="3"
+                                required
+                            ></textarea>
+                            <small class="form-help">
+                                How to get cookie? Click on Guide in the menu
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="postLink">
+                                <i class="fas fa-link"></i> Post Link
+                            </label>
+                            <input 
+                                type="url" 
+                                id="postLink" 
+                                placeholder="https://www.facebook.com/username/posts/123456789"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="limit">
+                                    <i class="fas fa-bullseye"></i> Share Limit
+                                </label>
+                                <input 
+                                    type="number" 
+                                    id="limit" 
+                                    min="1" 
+                                    max="1000" 
+                                    value="50"
+                                    required
+                                >
+                                <small class="form-help">Number of shares to attempt</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="delay">
+                                    <i class="fas fa-clock"></i> Delay (ms)
+                                </label>
+                                <input 
+                                    type="number" 
+                                    id="delay" 
+                                    min="1" 
+                                    max="5000" 
+                                    value="1"
+                                    required
+                                >
+                                <small class="form-help">Delay between each share in milliseconds</small>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="startBtn">
+                                <i class="fas fa-rocket"></i> Start Boosting
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="stopBtn" disabled>
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button type="button" class="btn btn-outline" id="resetBtn">
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="progress-section">
+                        <h3>Progress</h3>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-info">
+                                <span id="progressText">0%</span>
+                                <span id="progressCount">0 / 0</span>
+                            </div>
+                        </div>
+
+                        <div class="status-cards">
+                            <div class="status-card success">
+                                <i class="fas fa-check-circle"></i>
+                                <div>
+                                    <h4>Successful</h4>
+                                    <p id="successCount">0</p>
+                                </div>
+                            </div>
+                            <div class="status-card failed">
+                                <i class="fas fa-times-circle"></i>
+                                <div>
+                                    <h4>Failed</h4>
+                                    <p id="failedCount">0</p>
+                                </div>
+                            </div>
+                            <div class="status-card active">
+                                <i class="fas fa-sync-alt"></i>
+                                <div>
+                                    <h4>Active</h4>
+                                    <p id="activeCount">0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="log-container">
+                            <h4>Process Log</h4>
+                            <div class="log-box" id="logBox">
+                                <div class="log-entry">
+                                    <span class="log-time">[00:00:00]</span>
+                                    <span class="log-message">Ready to start...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Process Details -->
+                <div class="current-process" id="currentProcess" style="display: none;">
+                    <h3>Current Process Details</h3>
+                    <div class="process-details" id="processDetails">
+                        <!-- Dynamic content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (same as index.ejs) -->
+    <div id="guideModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Complete User Guide</h2>
+            <div class="modal-body">
+                <!-- Guide content here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Share History</h2>
+            <div class="modal-body">
+                <!-- History content here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Detailed Statistics</h2>
+            <div class="modal-body">
+                <!-- Stats content here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Active Processes</h2>
+            <div class="modal-body">
+                <!-- Process content here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
