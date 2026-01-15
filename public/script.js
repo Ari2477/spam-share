@@ -3,11 +3,11 @@ class MobileShareTool {
         this.currentUser = 'default';
         this.users = this.loadUsers();
         this.history = this.loadHistory();
+        this.shareLogs = this.loadShareLogs(); 
         this.isSharing = false;
         this.currentPage = 'home';
         this.shareProgress = { current: 0, total: 0, completed: 0, failed: 0 };
         this.shareController = null;
-        this.isScrolling = false;
         this.sessionId = null;
         this.eventSource = null;
         
@@ -24,6 +24,7 @@ class MobileShareTool {
         this.updateUserSelects();
         this.updateHistoryList();
         this.updateUsersList();
+        this.loadPersistentLogs(); // NEW: Load logs on init
     }
 
     setupEventListeners() {
@@ -47,7 +48,7 @@ class MobileShareTool {
             themeBtn.addEventListener('click', () => this.toggleTheme());
         }
 
-        // Navigation - Menu Items
+        // Navigation
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -57,7 +58,6 @@ class MobileShareTool {
             });
         });
 
-        // Navigation - Bottom Nav
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -66,7 +66,6 @@ class MobileShareTool {
             });
         });
 
-        // Quick Actions
         document.querySelectorAll('.action-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -87,12 +86,10 @@ class MobileShareTool {
                 this.updateRangeGradient(e.target.value);
             });
             
-            // Double click for custom input
             shareLimit.addEventListener('dblclick', () => {
                 this.showCustomInput();
             });
             
-            // Click on value for custom input
             limitValue.addEventListener('click', () => {
                 this.showCustomInput();
             });
@@ -159,7 +156,7 @@ class MobileShareTool {
             });
         });
 
-        // Add Refresh Button
+        // Add Refresh Button (UPDATED: No spinning on refresh)
         this.addRefreshButton();
         
         // Add Speed Controls
@@ -172,18 +169,15 @@ class MobileShareTool {
         const mainContent = document.querySelector('.main-content');
         if (!mainContent) return;
         
-        // Enable smooth scrolling
         mainContent.style.scrollBehavior = 'smooth';
         mainContent.style.webkitOverflowScrolling = 'touch';
         mainContent.style.overflowY = 'auto';
         mainContent.style.overscrollBehavior = 'contain';
         
-        // Fix for iOS Safari
         if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
             mainContent.style.webkitOverflowScrolling = 'touch';
         }
         
-        // Momentum scrolling effect
         let lastScrollTop = 0;
         let scrollTimeout;
         
@@ -192,7 +186,6 @@ class MobileShareTool {
             
             const currentScroll = mainContent.scrollTop;
             
-            // Detect scroll direction
             if (currentScroll > lastScrollTop) {
                 mainContent.classList.add('scrolling-down');
                 mainContent.classList.remove('scrolling-up');
@@ -208,7 +201,6 @@ class MobileShareTool {
             }, 150);
         }, { passive: true });
         
-        // Prevent body scroll when menu is open
         const sideMenu = document.getElementById('sideMenu');
         if (sideMenu) {
             sideMenu.addEventListener('touchmove', (e) => {
@@ -216,7 +208,6 @@ class MobileShareTool {
             }, { passive: true });
         }
         
-        // Add momentum to other scrollable elements
         const scrollableElements = document.querySelectorAll('.history-list, .log-box, .menu-nav');
         scrollableElements.forEach(el => {
             el.style.webkitOverflowScrolling = 'touch';
@@ -251,7 +242,7 @@ class MobileShareTool {
     setupSpeedControls() {
         this.speedSettings = {
             mode: 'balanced',
-            batchDelay: 1000,
+            batchDelay: 2000,
             batchSize: 5
         };
     }
@@ -263,7 +254,7 @@ class MobileShareTool {
             refreshBtn.id = 'refreshBtn';
             refreshBtn.className = 'icon-btn';
             refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
-            refreshBtn.title = 'Refresh';
+            refreshBtn.title = 'Refresh Data';
             
             const themeBtn = document.getElementById('themeBtn');
             if (themeBtn) {
@@ -272,6 +263,7 @@ class MobileShareTool {
                 headerRight.appendChild(refreshBtn);
             }
             
+            // FIXED: No spinning animation on refresh
             refreshBtn.addEventListener('click', () => {
                 this.refreshData();
             });
@@ -295,7 +287,6 @@ class MobileShareTool {
         if (shareForm) {
             shareForm.appendChild(speedControls);
             
-            // Add event listeners for speed buttons
             speedControls.querySelectorAll('.speed-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -324,20 +315,16 @@ class MobileShareTool {
     }
 
     refreshData() {
-        this.showToast('Refreshing...', 'info');
+        this.showToast('Refreshing data...', 'info');
         
-        const icon = document.querySelector('#refreshBtn i');
-        if (icon) {
-            icon.classList.add('fa-spin');
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-                this.showToast('Data refreshed!', 'success');
-            }, 1000);
-        }
-        
+        // FIXED: No spinning icon, just update data
         this.updateUI();
         this.updateHistoryList(true);
         this.updateUsersList();
+        
+        setTimeout(() => {
+            this.showToast('Data refreshed!', 'success');
+        }, 500);
     }
 
     toggleMenu(show) {
@@ -395,7 +382,6 @@ class MobileShareTool {
     }
 
     switchPage(page, smooth = false) {
-        // Update active nav items
         document.querySelectorAll('.menu-item').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
@@ -404,12 +390,10 @@ class MobileShareTool {
             item.classList.toggle('active', item.dataset.page === page);
         });
 
-        // Hide all pages
         document.querySelectorAll('.page').forEach(pageEl => {
             pageEl.classList.remove('active');
         });
 
-        // Show selected page
         const targetPage = document.getElementById(`${page}-page`);
         if (targetPage) {
             targetPage.classList.add('active');
@@ -431,7 +415,6 @@ class MobileShareTool {
             
             this.currentPage = page;
             
-            // Smooth scroll to top
             const mainContent = document.querySelector('.main-content');
             if (mainContent) {
                 mainContent.scrollTo({
@@ -447,16 +430,16 @@ class MobileShareTool {
                 }
             }
             
-            // Update page-specific data
             setTimeout(() => {
                 if (page === 'history') {
                     this.updateHistoryList(true);
                 } else if (page === 'users') {
                     this.updateUsersList();
+                } else if (page === 'share') {
+                    this.loadPersistentLogs(); // Load logs when switching to share page
                 }
             }, 100);
             
-            // Close menu if open
             this.toggleMenu(false);
         }
     }
@@ -525,7 +508,7 @@ class MobileShareTool {
         } else {
             document.getElementById('userName').value = '';
             document.getElementById('userCookie').value = '';
-            document.getElementById('userColor').value = '#667eea';
+            document.getElementById('userColor').value = '#667ea';
             delete saveBtn.dataset.userId;
             
             const modalTitle = modal.querySelector('h3');
@@ -571,7 +554,8 @@ class MobileShareTool {
             return;
         }
 
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        // FIXED: No spinning animation
+        saveBtn.innerHTML = 'Saving...';
         saveBtn.disabled = true;
         
         setTimeout(() => {
@@ -590,7 +574,7 @@ class MobileShareTool {
             saveBtn.disabled = false;
             
             this.showToast(`Account ${name} saved successfully`, 'success');
-        }, 500);
+        }, 300);
     }
 
     deleteUser(userId) {
@@ -792,15 +776,17 @@ class MobileShareTool {
         const startBtn = document.getElementById('startBtn');
         const resetBtn = document.getElementById('resetBtn');
         
+        // FIXED: No spinning animation
         if (startBtn) {
             startBtn.disabled = true;
-            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sharing...';
+            startBtn.innerHTML = 'Sharing...';
         }
         
         if (resetBtn) {
             resetBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
         }
         
+        // FIXED: Simple loading without spinner
         this.showLoading(true, 'Starting sharing process...');
         
         this.addLog('🚀 STARTING SHARING PROCESS', 'info');
@@ -899,12 +885,12 @@ class MobileShareTool {
                 break;
                 
             case 'share_success':
-                this.addLog(`✅ Share successful: ${data.shareId}`, 'success');
+                this.addLog(`✅ Share successful`, 'success');
                 this.updateProgress(data.current, data.total);
                 break;
                 
             case 'share_failed':
-                this.addLog(`❌ Share failed: ${data.error}`, 'error');
+                this.addLog(`❌ Share failed: ${data.error || 'Unknown error'}`, 'error');
                 this.updateProgress(data.current, data.total);
                 break;
                 
@@ -1052,10 +1038,6 @@ class MobileShareTool {
         }
     }
 
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
     parseNumber(str) {
         str = str.toLowerCase();
         if (str.includes('k')) return parseFloat(str) * 1000;
@@ -1088,8 +1070,16 @@ class MobileShareTool {
             logEntry.style.transform = 'translateX(0)';
         });
         
+        // Save log to persistent storage
+        this.saveLogToStorage({
+            time: time,
+            message: message,
+            type: type,
+            timestamp: Date.now()
+        });
+        
         const logs = logBox.querySelectorAll('.log-entry');
-        if (logs.length > 15) {
+        if (logs.length > 50) { // Keep more logs
             const toRemove = logs[logs.length - 1];
             toRemove.style.opacity = '0';
             toRemove.style.transform = 'translateX(10px)';
@@ -1108,6 +1098,70 @@ class MobileShareTool {
             case 'info': return '📝';
             default: return '📝';
         }
+    }
+
+    // NEW: Persistent Logs System
+    saveLogToStorage(log) {
+        if (!Array.isArray(this.shareLogs)) {
+            this.shareLogs = [];
+        }
+        
+        this.shareLogs.unshift(log);
+        
+        // Keep last 100 logs
+        if (this.shareLogs.length > 100) {
+            this.shareLogs = this.shareLogs.slice(0, 100);
+        }
+        
+        localStorage.setItem('mobileShareToolLogs', JSON.stringify(this.shareLogs));
+    }
+
+    loadShareLogs() {
+        try {
+            const logs = localStorage.getItem('mobileShareToolLogs');
+            return logs ? JSON.parse(logs) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    saveShareLogs() {
+        try {
+            localStorage.setItem('mobileShareToolLogs', JSON.stringify(this.shareLogs));
+        } catch (error) {
+            console.error('Error saving logs:', error);
+        }
+    }
+
+    loadPersistentLogs() {
+        const logBox = document.getElementById('logBox');
+        if (!logBox) return;
+        
+        if (this.shareLogs.length === 0) {
+            logBox.innerHTML = `
+                <div class="log-entry">
+                    <span class="log-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="log-msg info">📝 Ready to share. Logs will be saved even after refresh.</span>
+                </div>
+            `;
+            return;
+        }
+        
+        // Clear existing logs
+        logBox.innerHTML = '';
+        
+        // Load persistent logs
+        this.shareLogs.slice(0, 15).forEach(log => {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">${log.time}</span>
+                <span class="log-msg ${log.type}">${this.getLogIcon(log.type)} ${log.message}</span>
+            `;
+            logBox.appendChild(logEntry);
+        });
+        
+        this.addLog('📊 Loaded previous session logs', 'info');
     }
 
     resetShareForm() {
@@ -1138,7 +1192,7 @@ class MobileShareTool {
                 logBox.innerHTML = `
                     <div class="log-entry" style="animation: fadeIn 0.5s ease;">
                         <span class="log-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <span class="log-msg info">📝 Form reset. Ready for unlimited sharing!</span>
+                        <span class="log-msg info">📝 Form cleared. Ready for unlimited sharing!</span>
                     </div>
                 `;
                 logBox.style.opacity = '1';
@@ -1147,7 +1201,7 @@ class MobileShareTool {
         
         this.updateProgress(0, 0);
         
-        this.showToast('Form reset successfully', 'success');
+        this.showToast('Form cleared', 'success');
     }
 
     addHistory(entry) {
@@ -1446,14 +1500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             to { opacity: 1; }
         }
         
-        .fa-spin {
-            animation: fa-spin 1s linear infinite;
-        }
-        
-        @keyframes fa-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        /* REMOVED: Spinning animation classes */
         
         .confetti {
             position: fixed;
@@ -1538,6 +1585,48 @@ document.addEventListener('DOMContentLoaded', () => {
         
         .speed-btn:hover {
             transform: scale(1.02);
+        }
+        
+        /* Loading overlay without spinner */
+        .loading-overlay .loading-spinner {
+            text-align: center;
+        }
+        
+        .loading-overlay .spinner {
+            display: none; /* Hide spinner */
+        }
+        
+        /* Log box with persistent logs */
+        .log-box {
+            max-height: 250px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: var(--gray);
+            font-size: 0.8rem;
+            min-width: 50px;
+            display: inline-block;
+        }
+        
+        .log-msg {
+            margin-left: 10px;
         }
     `;
     document.head.appendChild(style);
