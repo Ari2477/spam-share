@@ -5,19 +5,15 @@ const cors = require('cors');
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Set view engine (for compatibility)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve static files from /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// User agents for rotation
 const ua_list = [
   "Mozilla/5.0 (Linux; Android 10; Wildfire E Lite) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/105.0.5195.136 Mobile Safari/537.36[FBAN/EMA;FBLC/en_US;FBAV/298.0.0.10.115;]",
   "Mozilla/5.0 (Linux; Android 11; KINGKONG 5 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0.4280.141 Mobile Safari/537.36[FBAN/EMA;FBLC/fr_FR;FBAV/320.0.0.12.108;]",
@@ -26,7 +22,6 @@ const ua_list = [
   "Mozilla/5.0 (Linux; Android 13; SM-S901B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36"
 ];
 
-// Token extraction with better error handling
 async function extract_token(cookie, ua) {
   try {
     console.log('Extracting token with UA:', ua.substring(0, 50) + '...');
@@ -56,7 +51,6 @@ async function extract_token(cookie, ua) {
       console.log('Token extracted successfully');
       return tokenMatch[1];
     } else {
-      // Try alternative extraction method
       const altMatch = response.data.match(/"accessToken":"([^"]+)"/);
       if (altMatch) {
         console.log('Token extracted via alternative method');
@@ -75,7 +69,6 @@ async function extract_token(cookie, ua) {
   }
 }
 
-// Share function with retry logic
 async function sharePost(token, post_link, ua, cookie, attempt = 1) {
   try {
     console.log(`Share attempt ${attempt} for link: ${post_link.substring(0, 50)}...`);
@@ -121,13 +114,11 @@ async function sharePost(token, post_link, ua, cookie, attempt = 1) {
     if (err.response) {
       console.error('Response status:', err.response.status);
       console.error('Response data:', err.response.data);
-      
-      // Handle specific Facebook API errors
+
       const errorData = err.response.data?.error || {};
       const errorCode = errorData.code;
       const errorMessage = errorData.message || err.message;
-      
-      // Retry logic for certain errors
+
       if (attempt < 3 && 
           (errorCode === 368 || errorCode === 4 || errorCode === 17)) {
         console.log(`Retrying (${attempt}/3)...`);
@@ -149,10 +140,8 @@ async function sharePost(token, post_link, ua, cookie, attempt = 1) {
   }
 }
 
-// Real-time progress via WebSocket/SSE
 const clients = new Map();
 
-// SSE endpoint for live progress
 app.get('/api/progress/:sessionId', (req, res) => {
   const sessionId = req.params.sessionId;
   
@@ -164,16 +153,13 @@ app.get('/api/progress/:sessionId', (req, res) => {
   });
 
   clients.set(sessionId, res);
-  
-  // Send initial connection message
+
   res.write(`data: ${JSON.stringify({ type: 'connected', sessionId })}\n\n`);
-  
-  // Heartbeat to keep connection alive
+
   const heartbeat = setInterval(() => {
     res.write(': heartbeat\n\n');
   }, 30000);
-  
-  // Cleanup on client disconnect
+
   req.on('close', () => {
     clearInterval(heartbeat);
     clients.delete(sessionId);
@@ -187,7 +173,6 @@ function sendProgress(sessionId, data) {
   }
 }
 
-// Main share endpoint - supports batch processing
 app.post("/api/share", async (req, res) => {
   const { cookie, link: post_link, limit = 1, sessionId } = req.body;
   const limitNum = parseInt(limit, 10);
@@ -199,7 +184,6 @@ app.post("/api/share", async (req, res) => {
     hasCookie: !!cookie
   });
 
-  // Validation
   if (!cookie || !post_link) {
     return res.status(400).json({ 
       status: false, 
@@ -222,10 +206,8 @@ app.post("/api/share", async (req, res) => {
   }
 
   try {
-    // Select random user agent
     const ua = ua_list[Math.floor(Math.random() * ua_list.length)];
-    
-    // Send progress: token extraction started
+
     if (sessionId) {
       sendProgress(sessionId, {
         type: 'progress',
@@ -235,7 +217,6 @@ app.post("/api/share", async (req, res) => {
       });
     }
 
-    // Extract token
     const token = await extract_token(cookie, ua);
     
     if (!token) {
@@ -252,7 +233,6 @@ app.post("/api/share", async (req, res) => {
       });
     }
 
-    // Send progress: token extracted
     if (sessionId) {
       sendProgress(sessionId, {
         type: 'progress',
@@ -262,19 +242,17 @@ app.post("/api/share", async (req, res) => {
       });
     }
 
-    // Process shares with batch support
     let success = 0;
     let failed = 0;
     const results = [];
-    const BATCH_SIZE = 5; // Process 5 at a time for stability
+    const BATCH_SIZE = 5; 
     const totalBatches = Math.ceil(limitNum / BATCH_SIZE);
     
     console.log(`Starting ${limitNum} shares in ${totalBatches} batches`);
 
     for (let batch = 0; batch < totalBatches; batch++) {
       const currentBatchSize = Math.min(BATCH_SIZE, limitNum - (batch * BATCH_SIZE));
-      
-      // Send progress: batch starting
+
       if (sessionId) {
         sendProgress(sessionId, {
           type: 'progress',
@@ -286,7 +264,6 @@ app.post("/api/share", async (req, res) => {
         });
       }
 
-      // Process current batch
       const batchPromises = [];
       for (let i = 0; i < currentBatchSize; i++) {
         batchPromises.push(
@@ -294,8 +271,7 @@ app.post("/api/share", async (req, res) => {
             .then(result => {
               if (result.success) {
                 success++;
-                
-                // Send individual success progress
+
                 if (sessionId) {
                   sendProgress(sessionId, {
                     type: 'share_success',
@@ -307,8 +283,7 @@ app.post("/api/share", async (req, res) => {
                 }
               } else {
                 failed++;
-                
-                // Send individual failure progress
+
                 if (sessionId) {
                   sendProgress(sessionId, {
                     type: 'share_failed',
@@ -330,16 +305,13 @@ app.post("/api/share", async (req, res) => {
         );
       }
 
-      // Wait for current batch to complete
       await Promise.allSettled(batchPromises);
       
-      // Small delay between batches to avoid rate limiting
       if (batch < totalBatches - 1) {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
 
-    // Send final progress
     if (sessionId) {
       sendProgress(sessionId, {
         type: 'complete',
@@ -350,7 +322,6 @@ app.post("/api/share", async (req, res) => {
         progress: 100
       });
       
-      // Close SSE connection
       setTimeout(() => {
         const client = clients.get(sessionId);
         if (client) {
@@ -363,7 +334,6 @@ app.post("/api/share", async (req, res) => {
 
     console.log(`Share process completed: ${success} successful, ${failed} failed`);
 
-    // Return final response
     res.json({
       status: true,
       message: success > 0 ? 
@@ -372,7 +342,7 @@ app.post("/api/share", async (req, res) => {
       success_count: success,
       failed_count: failed,
       total_attempted: limitNum,
-      results: results.slice(0, 10) // Return first 10 results
+      results: results.slice(0, 10) 
     });
 
   } catch (error) {
@@ -395,7 +365,6 @@ app.post("/api/share", async (req, res) => {
   }
 });
 
-// New endpoint: Single share (for testing)
 app.post("/api/share/single", async (req, res) => {
   const { cookie, link: post_link } = req.body;
   
@@ -434,7 +403,6 @@ app.post("/api/share/single", async (req, res) => {
   }
 });
 
-// New endpoint: Validate cookie
 app.post("/api/validate", async (req, res) => {
   const { cookie } = req.body;
   
@@ -470,7 +438,6 @@ app.post("/api/validate", async (req, res) => {
   }
 });
 
-// Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -481,7 +448,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Serve frontend
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -490,7 +456,6 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);
   res.status(500).json({
@@ -500,11 +465,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Closing HTTP server...');
-  
-  // Close all SSE connections
+
   clients.forEach(client => {
     client.write(`data: ${JSON.stringify({ type: 'server_shutdown' })}\n\n`);
     client.end();
@@ -513,7 +476,6 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
@@ -531,7 +493,6 @@ app.listen(PORT, HOST, () => {
 ╚══════════════════════════════════════╝
   `);
   
-  // Log environment info
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
 });
