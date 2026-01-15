@@ -1,57 +1,41 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App.js loaded'); // Debug log
+    console.log('✅ App.js loaded - MULTI-PROCESS VERSION');
     
     // DOM Elements
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     const modals = ['guideModal', 'historyModal', 'statsModal', 'processModal'];
-    let currentProcessId = null;
-    let processInterval = null;
-
+    
+    // Multi-process tracking
+    let activeProcesses = new Map(); // Map of processId -> {interval, status}
+    let processIntervals = new Map(); // Map of processId -> intervalId
+    
     // Initialize application
     initApp();
 
     function initApp() {
-        console.log('Initializing app...'); // Debug log
+        console.log('Initializing app...');
         setupEventListeners();
         updateStats();
         addLog('System initialized. Ready to start boosting.', 'info');
+        addLog('You can run multiple processes simultaneously.', 'info');
     }
 
     function setupEventListeners() {
-        console.log('Setting up event listeners...'); // Debug log
+        console.log('Setting up event listeners...');
         
-        // Menu Toggle - FIXED
+        // Menu Toggle
         if (menuToggle) {
-            console.log('Menu toggle found, adding click listener');
             menuToggle.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent event bubbling
-                console.log('Menu toggle clicked');
+                e.stopPropagation();
                 if (sidebar) {
                     sidebar.classList.toggle('active');
-                    console.log('Sidebar active:', sidebar.classList.contains('active'));
                 }
             });
-        } else {
-            console.log('Menu toggle NOT found');
         }
 
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            if (window.innerWidth <= 992 && 
-                sidebar && 
-                !sidebar.contains(event.target) && 
-                menuToggle && 
-                !menuToggle.contains(event.target) &&
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-                console.log('Sidebar closed by clicking outside');
-            }
-        });
-
-        // Modal Functions - Make them global
+        // Modal Functions
         window.openModal = function(modalId) {
-            console.log('Opening modal:', modalId);
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'flex';
@@ -61,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         window.closeModal = function(modalId) {
-            console.log('Closing modal:', modalId);
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'none';
@@ -69,37 +52,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        // Close modal when clicking outside
-        window.addEventListener('click', function(event) {
-            modals.forEach(modalId => {
-                const modal = document.getElementById(modalId);
-                if (modal && event.target === modal) {
-                    closeModal(modalId);
-                }
-            });
-        });
-
-        // Modal Links - FIXED
+        // Modal Links
         document.querySelectorAll('[id$="Link"]').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const modalId = this.id.replace('Link', 'Modal');
-                console.log('Modal link clicked:', this.id, '->', modalId);
                 openModal(modalId);
             });
         });
 
-        // Close buttons
-        document.querySelectorAll('.close-modal').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const modal = this.closest('.modal');
-                if (modal) {
-                    closeModal(modal.id);
-                }
-            });
-        });
-
-        // Share Form Handling
+        // Share Form Handling - MULTI-PROCESS SUPPORT
         const shareForm = document.getElementById('shareForm');
         if (shareForm) {
             console.log('Share form found');
@@ -114,13 +76,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Validation
                 if (!cookie || !postLink || !limit) {
-                    addLog('Please fill all required fields', 'error');
+                    addLog('❌ Please fill all required fields', 'error');
                     return;
                 }
                 
-                // Disable form and show loading
+                // Show loading state for this specific process
                 const startBtn = document.getElementById('startBtn');
                 const stopBtn = document.getElementById('stopBtn');
+                
                 if (startBtn) {
                     startBtn.disabled = true;
                     startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
@@ -128,9 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (stopBtn) {
                     stopBtn.disabled = false;
                 }
-                
-                // Reset progress
-                resetProgress();
                 
                 try {
                     console.log('Sending share request...');
@@ -151,32 +111,55 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Share response:', data);
                     
                     if (data.status) {
-                        currentProcessId = data.processId;
-                        addLog('Process started successfully', 'success');
-                        addLog(`Process ID: ${currentProcessId}`, 'info');
+                        const processId = data.processId;
                         
-                        // Start polling for progress
-                        startProcessPolling(currentProcessId);
+                        // Store process info
+                        activeProcesses.set(processId, {
+                            id: processId,
+                            status: 'starting',
+                            link: postLink,
+                            limit: limit,
+                            startTime: new Date()
+                        });
+                        
+                        addLog(`🚀 Process #${processId.substring(0, 8)} started`, 'success');
+                        addLog(`📊 Target: ${limit} shares to ${postLink}`, 'info');
+                        addLog(`🔄 Process added. Active processes: ${activeProcesses.size}`, 'info');
+                        
+                        // Start polling for this specific process
+                        startProcessPolling(processId);
+                        
+                        // Re-enable start button for new processes
+                        if (startBtn) {
+                            setTimeout(() => {
+                                startBtn.disabled = false;
+                                startBtn.innerHTML = '<i class="fas fa-rocket"></i> Start New Boost';
+                            }, 1000);
+                        }
+                        
                     } else {
-                        addLog(`Error: ${data.message}`, 'error');
+                        addLog(`❌ Error: ${data.message}`, 'error');
                         resetForm();
                     }
                 } catch (error) {
                     console.error('Fetch error:', error);
-                    addLog(`Network error: ${error.message}`, 'error');
+                    addLog(`❌ Network error: ${error.message}`, 'error');
                     resetForm();
                 }
             });
         }
 
-        // Stop Process Button
+        // Stop ALL Processes Button
         const stopBtn = document.getElementById('stopBtn');
         if (stopBtn) {
             stopBtn.addEventListener('click', function() {
-                if (currentProcessId && processInterval) {
-                    clearInterval(processInterval);
-                    addLog('Process stopped manually', 'warning');
-                    resetForm();
+                if (activeProcesses.size > 0) {
+                    if (confirm(`Stop all ${activeProcesses.size} active processes?`)) {
+                        stopAllProcesses();
+                        addLog('🛑 All processes stopped by user', 'warning');
+                    }
+                } else {
+                    addLog('ℹ️ No active processes to stop', 'info');
                 }
             });
         }
@@ -187,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             resetBtn.addEventListener('click', function() {
                 resetForm();
                 resetProgress();
-                addLog('Form reset', 'info');
+                addLog('🔄 Form reset', 'info');
             });
         }
 
@@ -204,10 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         if (data.status) {
                             await loadHistory();
-                            addLog('History cleared successfully', 'success');
+                            addLog('🗑️ History cleared successfully', 'success');
                         }
                     } catch (error) {
-                        addLog('Error clearing history', 'error');
+                        addLog('❌ Error clearing history', 'error');
                     }
                 }
             });
@@ -234,67 +217,185 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Process Polling
+    // Process Polling - FIXED with auto-stop
     function startProcessPolling(processId) {
-        processInterval = setInterval(async () => {
+        // Clear any existing interval for this process
+        if (processIntervals.has(processId)) {
+            clearInterval(processIntervals.get(processId));
+        }
+        
+        const intervalId = setInterval(async () => {
             try {
                 const response = await fetch(`/api/process/${processId}`);
                 const data = await response.json();
                 
-                if (data.status) {
-                    updateProgress(data.process);
+                if (data.status && data.process) {
+                    const process = data.process;
                     
-                    if (data.process.status === 'completed' || 
-                        data.process.status === 'failed' || 
-                        data.process.status === 'stopped') {
-                        clearInterval(processInterval);
+                    // Update stored process info
+                    if (activeProcesses.has(processId)) {
+                        activeProcesses.set(processId, {
+                            ...activeProcesses.get(processId),
+                            ...process
+                        });
+                    }
+                    
+                    // Update UI progress
+                    updateProgress(process);
+                    
+                    // Check if process is completed
+                    if (process.status === 'completed' || 
+                        process.status === 'failed' || 
+                        process.status === 'stopped') {
                         
-                        if (data.process.status === 'completed') {
-                            addLog(`Process completed: ${data.process.success} successful shares`, 'success');
-                        } else {
-                            addLog(`Process ${data.process.status}: ${data.process.error || ''}`, 'error');
+                        // Clear interval for this process
+                        clearInterval(intervalId);
+                        processIntervals.delete(processId);
+                        
+                        // Remove from active processes after delay
+                        setTimeout(() => {
+                            activeProcesses.delete(processId);
+                            addLog(`📋 Process #${processId.substring(0, 8)} removed. Active: ${activeProcesses.size}`, 'info');
+                            updateProcessCounter();
+                        }, 3000);
+                        
+                        // Log final results
+                        if (process.status === 'completed') {
+                            const successRate = Math.round((process.success / process.total) * 100);
+                            addLog(`✅ Process #${processId.substring(0, 8)} COMPLETED!`, 'success');
+                            addLog(`📊 Results: ${process.success}/${process.total} successful (${successRate}% success rate)`, 'info');
+                            addLog(`⏱️ Duration: ${(process.duration / 1000).toFixed(1)} seconds`, 'info');
+                        } else if (process.status === 'failed') {
+                            addLog(`❌ Process #${processId.substring(0, 8)} FAILED: ${process.error || 'Unknown error'}`, 'error');
+                        } else if (process.status === 'stopped') {
+                            addLog(`🛑 Process #${processId.substring(0, 8)} STOPPED`, 'warning');
+                            addLog(`📊 Partial results: ${process.success}/${process.current} successful`, 'info');
                         }
                         
-                        // Enable form after delay
-                        setTimeout(resetForm, 3000);
+                        // Update stats
+                        updateStats();
+                        
+                        // Update stop button state
+                        updateStopButtonState();
+                        
                     }
                 } else {
-                    clearInterval(processInterval);
-                    addLog('Process not found', 'error');
-                    resetForm();
+                    // Process not found - might have been cleaned up
+                    clearInterval(intervalId);
+                    processIntervals.delete(processId);
+                    activeProcesses.delete(processId);
+                    
+                    if (data.message) {
+                        addLog(`⚠️ Process #${processId.substring(0, 8)}: ${data.message}`, 'warning');
+                    }
+                    
+                    updateProcessCounter();
+                    updateStopButtonState();
                 }
             } catch (error) {
-                console.error('Polling error:', error);
+                console.error(`Polling error for process ${processId}:`, error);
+                // Don't clear interval on network errors, keep trying
             }
-        }, 1000); // Poll every second
+        }, 1500); // Poll every 1.5 seconds
+        
+        // Store interval ID
+        processIntervals.set(processId, intervalId);
+        
+        // Update process counter
+        updateProcessCounter();
+        updateStopButtonState();
     }
 
     // Update Progress Display
     function updateProgress(process) {
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const progressCount = document.getElementById('progressCount');
-        const successCount = document.getElementById('successCount');
-        const failedCount = document.getElementById('failedCount');
-        const activeCount = document.getElementById('activeCount');
+        // Get or create progress container for this process
+        let progressContainer = document.getElementById(`progress-${process.id}`);
         
-        if (progressFill && process) {
-            const percentage = (process.current / process.total) * 100;
-            progressFill.style.width = `${percentage}%`;
+        if (!progressContainer) {
+            // Create new progress container for this process
+            progressContainer = document.createElement('div');
+            progressContainer.id = `progress-${process.id}`;
+            progressContainer.className = 'process-container';
             
-            if (progressText) progressText.textContent = `${percentage.toFixed(1)}%`;
-            if (progressCount) progressCount.textContent = `${process.current} / ${process.total}`;
-            if (successCount) successCount.textContent = process.success || 0;
-            if (failedCount) failedCount.textContent = process.failed || 0;
-            
-            // Add log entry for significant progress
-            if (process.current % 10 === 0 || process.current === process.total) {
-                addLog(`Progress: ${process.current}/${process.total} (${process.success} successful)`, 'info');
+            const progressBox = document.querySelector('.progress-box');
+            if (progressBox) {
+                // Insert after existing progress
+                progressBox.parentNode.insertBefore(progressContainer, progressBox.nextSibling);
             }
         }
         
-        // Update stats
-        updateStats();
+        // Update progress content
+        const percentage = Math.min(100, (process.current / process.total) * 100);
+        const successRate = process.current > 0 ? Math.round((process.success / process.current) * 100) : 0;
+        
+        progressContainer.innerHTML = `
+            <div class="process-header">
+                <strong>Process #${process.id.substring(0, 8)}</strong>
+                <span class="status-badge ${process.status}">${process.status.toUpperCase()}</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                </div>
+                <div class="progress-info">
+                    <span>${percentage.toFixed(1)}%</span>
+                    <span>${process.current}/${process.total}</span>
+                    <span>✅ ${process.success}</span>
+                    <span>❌ ${process.failed}</span>
+                    <span>${successRate}% success</span>
+                </div>
+            </div>
+            <div class="process-details">
+                <small>Link: ${process.link.substring(0, 50)}...</small>
+                <small>Started: ${new Date(process.startTime).toLocaleTimeString()}</small>
+            </div>
+        `;
+        
+        // Add detailed log for significant progress updates
+        if (process.current % 25 === 0 || process.current === process.total) {
+            addLog(`📈 Process #${process.id.substring(0, 8)}: ${process.current}/${process.total} (${process.success}✅ ${process.failed}❌)`, 'info');
+        }
+    }
+
+    // Stop all processes
+    function stopAllProcesses() {
+        // Clear all intervals
+        processIntervals.forEach((intervalId, processId) => {
+            clearInterval(intervalId);
+        });
+        
+        processIntervals.clear();
+        activeProcesses.clear();
+        
+        // Reset UI
+        resetForm();
+        resetProgress();
+        
+        // Clear process containers
+        document.querySelectorAll('.process-container').forEach(el => el.remove());
+        
+        // Update process counter
+        updateProcessCounter();
+    }
+
+    // Update process counter display
+    function updateProcessCounter() {
+        const counterEl = document.getElementById('processCounter');
+        if (counterEl) {
+            counterEl.textContent = activeProcesses.size;
+            counterEl.className = activeProcesses.size > 0 ? 'active' : '';
+        }
+    }
+
+    // Update stop button state
+    function updateStopButtonState() {
+        const stopBtn = document.getElementById('stopBtn');
+        if (stopBtn) {
+            stopBtn.disabled = activeProcesses.size === 0;
+            stopBtn.innerHTML = activeProcesses.size > 0 
+                ? `<i class="fas fa-stop-circle"></i> Stop All (${activeProcesses.size})` 
+                : `<i class="fas fa-stop-circle"></i> Stop`;
+        }
     }
 
     // Reset Form
@@ -304,18 +405,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (startBtn) {
             startBtn.disabled = false;
-            startBtn.innerHTML = '<i class="fas fa-rocket"></i> Start Boosting';
+            startBtn.innerHTML = '<i class="fas fa-rocket"></i> Start New Boost';
         }
         
-        if (stopBtn) {
-            stopBtn.disabled = true;
-        }
-        
-        currentProcessId = null;
-        if (processInterval) {
-            clearInterval(processInterval);
-            processInterval = null;
-        }
+        updateStopButtonState();
     }
 
     // Reset Progress
@@ -331,6 +424,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (progressCount) progressCount.textContent = '0 / 0';
         if (successCount) successCount.textContent = '0';
         if (failedCount) failedCount.textContent = '0';
+        
+        // Clear all process containers except the main one
+        document.querySelectorAll('.process-container').forEach(el => {
+            if (!el.id.startsWith('progress-main')) {
+                el.remove();
+            }
+        });
     }
 
     // Add Log Entry
@@ -341,17 +441,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const time = new Date().toLocaleTimeString();
         const logEntry = document.createElement('div');
         logEntry.className = 'log-entry';
+        
+        // Add icons based on type
+        let icon = '📝';
+        if (type === 'success') icon = '✅';
+        else if (type === 'error') icon = '❌';
+        else if (type === 'warning') icon = '⚠️';
+        else if (type === 'info') icon = 'ℹ️';
+        
         logEntry.innerHTML = `
             <span class="log-time">[${time}]</span>
+            <span class="log-icon">${icon}</span>
             <span class="log-message ${type}">${message}</span>
         `;
         
         logBox.appendChild(logEntry);
         logBox.scrollTop = logBox.scrollHeight;
         
-        // Keep only last 50 log entries
+        // Keep only last 100 log entries
         const entries = logBox.querySelectorAll('.log-entry');
-        if (entries.length > 50) {
+        if (entries.length > 100) {
             entries[0].remove();
         }
     }
@@ -368,11 +477,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 const successfulSharesEl = document.getElementById('successfulShares');
                 const failedSharesEl = document.getElementById('failedShares');
                 const activeProcessesEl = document.getElementById('activeProcesses');
+                const successRateEl = document.getElementById('successRate');
                 
                 if (totalSharesEl) totalSharesEl.textContent = data.stats.totalShares;
                 if (successfulSharesEl) successfulSharesEl.textContent = data.stats.successfulShares;
                 if (failedSharesEl) failedSharesEl.textContent = data.stats.failedShares;
                 if (activeProcessesEl) activeProcessesEl.textContent = data.stats.activeProcesses;
+                
+                // Calculate and display success rate
+                if (successRateEl && data.stats.totalShares > 0) {
+                    const successRate = Math.round((data.stats.successfulShares / data.stats.totalShares) * 100);
+                    successRateEl.textContent = `${successRate}%`;
+                    successRateEl.style.color = successRate >= 80 ? '#4CAF50' : 
+                                               successRate >= 60 ? '#FF9800' : '#F44336';
+                }
             }
         } catch (error) {
             console.error('Error updating stats:', error);
@@ -407,18 +525,24 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.status && data.history.length > 0) {
                 let html = '';
-                data.history.forEach(item => {
+                data.history.forEach((item, index) => {
                     const date = new Date(item.date).toLocaleString();
+                    const successRate = Math.round((item.success / item.total) * 100);
+                    const duration = (item.duration / 1000).toFixed(1);
+                    
                     html += `
                         <div class="history-item">
                             <div class="history-header">
-                                <strong>${date}</strong>
-                                <span class="badge ${item.success === item.total ? 'success' : 'warning'}">
-                                    ${item.success}/${item.total} successful
+                                <strong>#${index + 1} - ${date}</strong>
+                                <span class="badge ${successRate >= 80 ? 'success' : successRate >= 60 ? 'warning' : 'error'}">
+                                    ${item.success}/${item.total} (${successRate}%)
                                 </span>
                             </div>
                             <p class="history-link">${item.link}</p>
-                            <small>Duration: ${(item.duration / 1000).toFixed(2)}s</small>
+                            <div class="history-footer">
+                                <small>⏱️ ${duration}s</small>
+                                <small>🆔 ${item.id.substring(0, 8)}</small>
+                            </div>
                         </div>
                     `;
                 });
@@ -427,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 historyList.innerHTML = '<p class="loading">No history found</p>';
             }
         } catch (error) {
-            historyList.innerHTML = '<p class="error">Error loading history</p>';
+            historyList.innerHTML = '<p class="error">❌ Error loading history</p>';
         }
     }
 
@@ -445,35 +569,39 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status) {
                 const stats = data.stats;
                 const successRate = stats.totalShares > 0 ? 
-                    ((stats.successfulShares / stats.totalShares) * 100).toFixed(2) : 0;
+                    Math.round((stats.successfulShares / stats.totalShares) * 100) : 0;
                 
                 statsDetails.innerHTML = `
                     <div class="stats-grid">
                         <div class="stat-detail">
-                            <h3>Total Shares</h3>
-                            <p class="stat-value">${stats.totalShares}</p>
+                            <h3>📊 Total Shares</h3>
+                            <p class="stat-value">${stats.totalShares.toLocaleString()}</p>
                         </div>
                         <div class="stat-detail">
-                            <h3>Successful</h3>
-                            <p class="stat-value" style="color: #4CAF50;">${stats.successfulShares}</p>
+                            <h3>✅ Successful</h3>
+                            <p class="stat-value" style="color: #4CAF50;">${stats.successfulShares.toLocaleString()}</p>
                         </div>
                         <div class="stat-detail">
-                            <h3>Failed</h3>
-                            <p class="stat-value" style="color: #f44336;">${stats.failedShares}</p>
+                            <h3>❌ Failed</h3>
+                            <p class="stat-value" style="color: #f44336;">${stats.failedShares.toLocaleString()}</p>
                         </div>
                         <div class="stat-detail">
-                            <h3>Success Rate</h3>
-                            <p class="stat-value" style="color: #2196F3;">${successRate}%</p>
+                            <h3>📈 Success Rate</h3>
+                            <p class="stat-value" style="color: ${successRate >= 80 ? '#4CAF50' : successRate >= 60 ? '#FF9800' : '#F44336'};">${successRate}%</p>
                         </div>
                         <div class="stat-detail">
-                            <h3>Active Processes</h3>
+                            <h3>🔄 Active Processes</h3>
                             <p class="stat-value">${stats.activeProcesses}</p>
+                        </div>
+                        <div class="stat-detail">
+                            <h3>⚡ Avg. Speed</h3>
+                            <p class="stat-value">${stats.totalShares > 0 ? Math.round(stats.totalShares / 10) : 0}/min</p>
                         </div>
                     </div>
                 `;
             }
         } catch (error) {
-            statsDetails.innerHTML = '<p class="error">Error loading statistics</p>';
+            statsDetails.innerHTML = '<p class="error">❌ Error loading statistics</p>';
         }
     }
 
@@ -482,37 +610,60 @@ document.addEventListener('DOMContentLoaded', function() {
         const processList = document.getElementById('processList');
         if (!processList) return;
         
-        processList.innerHTML = '<div class="spinner"></div><p>Loading active processes...</p>';
-        
-        // Show current active processes
-        if (currentProcessId) {
-            try {
-                const response = await fetch(`/api/process/${currentProcessId}`);
-                const data = await response.json();
-                
-                if (data.status) {
-                    const process = data.process;
-                    processList.innerHTML = `
-                        <div class="process-item">
-                            <h4>Active Process: ${process.id}</h4>
-                            <p>Status: <strong>${process.status}</strong></p>
-                            <p>Progress: ${process.current}/${process.total}</p>
-                            <p>Successful: ${process.success}</p>
-                            <p>Failed: ${process.failed}</p>
-                            <p>Link: ${process.link.substring(0, 50)}...</p>
+        if (activeProcesses.size > 0) {
+            let html = '';
+            activeProcesses.forEach((process, processId) => {
+                const elapsed = Math.round((new Date() - new Date(process.startTime)) / 1000);
+                html += `
+                    <div class="process-item">
+                        <div class="process-item-header">
+                            <h4>🔄 Process #${processId.substring(0, 8)}</h4>
+                            <span class="status ${process.status}">${process.status}</span>
                         </div>
-                    `;
-                } else {
-                    processList.innerHTML = '<p>No active processes found.</p>';
-                }
-            } catch (error) {
-                processList.innerHTML = '<p class="error">Error loading processes</p>';
-            }
+                        <div class="process-item-details">
+                            <p><strong>Link:</strong> ${process.link.substring(0, 60)}...</p>
+                            <p><strong>Target:</strong> ${process.limit} shares</p>
+                            <p><strong>Running:</strong> ${elapsed} seconds</p>
+                            <button onclick="stopProcess('${processId}')" class="btn-stop-small">
+                                <i class="fas fa-stop"></i> Stop This Process
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            processList.innerHTML = html;
         } else {
-            processList.innerHTML = '<p>No active processes running.</p>';
+            processList.innerHTML = '<p class="loading">No active processes running.</p>';
         }
     }
 
+    // Global function to stop specific process
+    window.stopProcess = function(processId) {
+        if (confirm('Stop this specific process?')) {
+            fetch(`/api/process/${processId}/stop`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status) {
+                        addLog(`🛑 Process #${processId.substring(0, 8)} stopped`, 'warning');
+                    }
+                })
+                .catch(err => {
+                    addLog(`❌ Failed to stop process: ${err.message}`, 'error');
+                });
+        }
+    };
+
     // Auto-refresh stats every 30 seconds
     setInterval(updateStats, 30000);
+    
+    // Clean up finished processes every minute
+    setInterval(() => {
+        processIntervals.forEach((intervalId, processId) => {
+            // Check if process is still in activeProcesses
+            if (!activeProcesses.has(processId)) {
+                clearInterval(intervalId);
+                processIntervals.delete(processId);
+            }
+        });
+    }, 60000);
 });
