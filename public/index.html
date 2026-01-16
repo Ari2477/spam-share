@@ -220,8 +220,7 @@
         .slider.round:before {
             border-radius: 50%;
         }
-        
-        /* Custom number input buttons */
+    
         .number-btn {
             transition: all 0.2s ease;
         }
@@ -267,6 +266,350 @@
         .status-completed { background-color: #bbf7d0; color: #065f46; }
         .status-failed { background-color: #fee2e2; color: #991b1b; }
         .status-stale { background-color: #f3f4f6; color: #374151; }
+        
+        /* ==================== CUSTOM WARNING POPUPS ==================== */
+        .warning-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+            animation: fadeInOverlay 0.3s ease;
+        }
+        
+        .warning-modal-overlay.active {
+            display: flex;
+        }
+        
+        .warning-modal-container {
+            background: white;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .warning-modal-header {
+            padding: 25px 30px 15px;
+            text-align: center;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            position: relative;
+        }
+        
+        .warning-modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+        }
+        
+        .warning-modal-header::before {
+            content: '⚠️';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            z-index: 2;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .warning-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .warning-modal-subtitle {
+            font-size: 15px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .warning-modal-body {
+            padding: 40px 30px 30px;
+            text-align: center;
+        }
+        
+        .warning-modal-message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #374151;
+            margin-bottom: 25px;
+        }
+        
+        .warning-modal-details {
+            background: #fef3c7;
+            border: 2px dashed #f59e0b;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            animation: pulseWarning 2s infinite;
+        }
+        
+        .warning-modal-details p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #92400e;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .warning-modal-details i {
+            margin-right: 10px;
+            margin-top: 2px;
+            color: #d97706;
+        }
+        
+        .warning-modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        .warning-modal-btn {
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .warning-modal-btn-confirm {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        .warning-modal-btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        .warning-modal-btn-cancel {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+            box-shadow: 0 5px 15px rgba(107, 114, 128, 0.3);
+        }
+        
+        .warning-modal-btn-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(107, 114, 128, 0.4);
+        }
+        
+        .warning-modal-btn-safe {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .warning-modal-btn-safe:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        /* Alert Modal (Simple OK only) */
+        .alert-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        
+        .alert-modal-overlay.active {
+            display: flex;
+        }
+        
+        .alert-modal-container {
+            background: white;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 90%;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .alert-modal-header {
+            padding: 25px 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        
+        .alert-modal-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .alert-modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .alert-modal-body {
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .alert-modal-message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #374151;
+            margin-bottom: 25px;
+        }
+        
+        .alert-modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .alert-modal-btn {
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .alert-modal-btn-ok {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .alert-modal-btn-ok:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Error Alert */
+        .alert-error .alert-modal-header {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .alert-error .alert-modal-btn-ok {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        .alert-error .alert-modal-btn-ok:hover {
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        /* Warning Alert */
+        .alert-warning .alert-modal-header {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .alert-warning .alert-modal-btn-ok {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+        }
+        
+        .alert-warning .alert-modal-btn-ok:hover {
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+        
+        /* Success Alert */
+        .alert-success .alert-modal-header {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .alert-success .alert-modal-btn-ok {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .alert-success .alert-modal-btn-ok:hover {
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        /* Extreme Warning */
+        .extreme-warning .warning-modal-header {
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            animation: extremeWarningHeader 2s infinite;
+        }
+        
+        @keyframes extremeWarningHeader {
+            0%, 100% { 
+                background: linear-gradient(135deg, #ef4444, #991b1b);
+            }
+            50% { 
+                background: linear-gradient(135deg, #f87171, #dc2626);
+            }
+        }
+        
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUpModal {
+            from {
+                opacity: 0;
+                transform: translateY(60px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes pulseWarning {
+            0%, 100% { border-color: #f59e0b; }
+            50% { border-color: #fbbf24; }
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen pt-16">
@@ -342,6 +685,47 @@
             </div>
         </div>
     </nav>
+
+    <div id="warning-modal" class="warning-modal-overlay">
+        <div class="warning-modal-container">
+            <div class="warning-modal-header">
+                <div class="warning-modal-title">⚠️ WARNING</div>
+                <div class="warning-modal-subtitle" id="warning-modal-subtitle">Please confirm your action</div>
+            </div>
+            <div class="warning-modal-body">
+                <div class="warning-modal-message" id="warning-modal-message"></div>
+                <div class="warning-modal-details" id="warning-modal-details" style="display: none;"></div>
+                <div class="warning-modal-actions">
+                    <button class="warning-modal-btn warning-modal-btn-confirm" id="warning-modal-confirm">
+                        <i class="fas fa-check-circle"></i> CONTINUE
+                    </button>
+                    <button class="warning-modal-btn warning-modal-btn-cancel" id="warning-modal-cancel">
+                        <i class="fas fa-times-circle"></i> CANCEL
+                    </button>
+                    <button class="warning-modal-btn warning-modal-btn-safe" id="warning-modal-safe" style="display: none;">
+                        <i class="fas fa-shield-alt"></i> USE SAFE SETTINGS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alert-modal" class="alert-modal-overlay">
+        <div class="alert-modal-container">
+            <div class="alert-modal-header">
+                <div class="alert-modal-icon" id="alert-modal-icon">ℹ️</div>
+                <div class="alert-modal-title" id="alert-modal-title">Information</div>
+            </div>
+            <div class="alert-modal-body">
+                <div class="alert-modal-message" id="alert-modal-message"></div>
+                <div class="alert-modal-actions">
+                    <button class="alert-modal-btn alert-modal-btn-ok" id="alert-modal-ok">
+                        <i class="fas fa-check"></i> OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="max-w-6xl mx-auto p-4 md:p-8">
         <!-- Header -->
@@ -667,8 +1051,7 @@
                             <div id="result-icon" class="text-4xl"></div>
                         </div>
                     </div>
-                    
-                    <!-- Loading Indicator -->
+
                     <div id="loading" class="loading mt-8 p-6 rounded-xl border border-gray-200">
                         <div class="flex items-center">
                             <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mr-4"></div>
@@ -689,8 +1072,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Instructions -->
+       
             <div id="instructions" class="hidden p-6 md:p-8">
                 <div class="slide-in-right">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">
@@ -823,8 +1205,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Disclaimer -->
+
             <div id="disclaimer" class="hidden p-6 md:p-8">
                 <div class="slide-in-right">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">
@@ -881,8 +1262,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Live Process Dashboard -->
+
             <div id="process-dashboard" class="hidden p-6 md:p-8">
                 <div class="slide-in-right">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">
@@ -926,8 +1306,7 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Active Processes -->
+
                     <div class="mb-8">
                         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-spinner mr-2 text-green-600 animate-spin"></i>
@@ -940,8 +1319,7 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Recent Processes -->
+
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-history mr-2 text-blue-600"></i>
@@ -954,8 +1332,7 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Auto-refresh toggle -->
+
                     <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                         <div class="flex items-center">
                             <i class="fas fa-sync-alt mr-3 text-blue-600"></i>
@@ -973,8 +1350,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Footer -->
+
             <div class="bg-gray-50 border-t border-gray-200 p-6 text-center fade-in">
                 <p class="text-gray-600">
                     <i class="fas fa-code mr-2"></i>Facebook Share Tool • Made for Educational Purposes
@@ -1001,13 +1377,101 @@
     </div>
 
     <script>
-        // Variables
         let isUnlimited = false;
         let sharingActive = false;
         let autoRefreshInterval;
         let lastProcessUpdate = 0;
-        
-        // Navbar scroll effect
+
+        function showAlert(title, message, type = 'info') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('alert-modal');
+                const titleEl = document.getElementById('alert-modal-title');
+                const messageEl = document.getElementById('alert-modal-message');
+                const iconEl = document.getElementById('alert-modal-icon');
+                const okBtn = document.getElementById('alert-modal-ok');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+    
+                modal.className = `alert-modal-overlay alert-${type}`;
+  
+                if (type === 'error') iconEl.textContent = '❌';
+                else if (type === 'success') iconEl.textContent = '✅';
+                else if (type === 'warning') iconEl.textContent = '⚠️';
+                else iconEl.textContent = 'ℹ️';
+
+                modal.classList.add('active');
+
+                const handleOk = () => {
+                    modal.classList.remove('active');
+                    okBtn.removeEventListener('click', handleOk);
+                    resolve();
+                };
+                
+                okBtn.addEventListener('click', handleOk);
+            });
+        }
+
+        function showConfirm(options) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('warning-modal');
+                const messageEl = document.getElementById('warning-modal-message');
+                const subtitleEl = document.getElementById('warning-modal-subtitle');
+                const detailsEl = document.getElementById('warning-modal-details');
+                const confirmBtn = document.getElementById('warning-modal-confirm');
+                const cancelBtn = document.getElementById('warning-modal-cancel');
+                const safeBtn = document.getElementById('warning-modal-safe');
+
+                messageEl.textContent = options.message;
+                subtitleEl.textContent = options.subtitle || 'Please confirm your action';
+
+                if (options.details && options.details.length > 0) {
+                    detailsEl.style.display = 'block';
+                    detailsEl.innerHTML = options.details.map(detail => 
+                        `<p><i class="fas fa-exclamation-circle"></i> ${detail}</p>`
+                    ).join('');
+                } else {
+                    detailsEl.style.display = 'none';
+                }
+
+                confirmBtn.style.display = 'flex';
+                safeBtn.style.display = options.showSafe ? 'flex' : 'none';
+ 
+                if (options.confirmText) confirmBtn.innerHTML = `<i class="fas fa-check-circle"></i> ${options.confirmText}`;
+                if (options.safeText) safeBtn.innerHTML = `<i class="fas fa-shield-alt"></i> ${options.safeText}`;
+
+                if (options.extremeWarning) {
+                    modal.classList.add('extreme-warning');
+                } else {
+                    modal.classList.remove('extreme-warning');
+                }
+
+                modal.classList.add('active');
+
+                const cleanup = () => {
+                    modal.classList.remove('active');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    safeBtn.onclick = null;
+                };
+                
+                confirmBtn.onclick = () => {
+                    cleanup();
+                    resolve('confirm');
+                };
+                
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve('cancel');
+                };
+                
+                safeBtn.onclick = () => {
+                    cleanup();
+                    resolve('safe');
+                };
+            });
+        }
+
         window.addEventListener('scroll', function() {
             const navbar = document.querySelector('.navbar');
             if (window.scrollY > 20) {
@@ -1016,8 +1480,7 @@
                 navbar.classList.remove('navbar-scrolled');
             }
         });
-        
-        // Mobile menu toggle
+
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
         
@@ -1025,19 +1488,17 @@
             mobileMenu.classList.toggle('hidden');
             mobileMenuButton.classList.toggle('active');
         });
-        
-        // No Limit Toggle
+
         const noLimitToggle = document.getElementById('no-limit-toggle');
         const limitInput = document.getElementById('limit');
         const limitSection = document.getElementById('limit-section');
         const submitBtn = document.getElementById('submit-btn');
         const estimatedTimeElement = document.getElementById('estimated-time');
         
-        noLimitToggle.addEventListener('change', function() {
+        noLimitToggle.addEventListener('change', async function() {
             isUnlimited = this.checked;
             
             if (isUnlimited) {
-                // Disable limit input for unlimited mode
                 limitInput.disabled = true;
                 limitInput.value = "∞";
                 limitInput.classList.add('opacity-50', 'cursor-not-allowed');
@@ -1045,11 +1506,13 @@
                 submitBtn.innerHTML = '<i class="fas fa-infinity mr-3"></i> Start Unlimited Sharing';
                 submitBtn.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-pink-600');
                 estimatedTimeElement.textContent = '∞';
-                
-                // Show warning
-                alert('⚠️ WARNING: Unlimited mode will share continuously until stopped or until Facebook blocks you. Use with caution!');
+
+                await showAlert(
+                    '⚠️ UNLIMITED MODE ACTIVATED',
+                    'Unlimited mode will share continuously until stopped or until Facebook blocks you. Use with extreme caution!',
+                    'warning'
+                );
             } else {
-                // Enable limit input
                 limitInput.disabled = false;
                 limitInput.value = "1000";
                 limitInput.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -1059,8 +1522,7 @@
                 calculateEstimatedTime();
             }
         });
-        
-        // Calculate estimated time function
+
         function calculateEstimatedTime() {
             const limit = parseInt(document.getElementById('limit').value) || 1000;
             const delay = parseInt(document.getElementById('delay').value) || 1;
@@ -1069,8 +1531,7 @@
                 estimatedTimeElement.textContent = '∞';
                 return;
             }
-            
-            // Calculate total time in seconds
+
             const totalSeconds = Math.round((limit * delay) / 1000);
             
             if (totalSeconds < 60) {
@@ -1085,15 +1546,12 @@
                 estimatedTimeElement.textContent = `${hours}h ${minutes}m`;
             }
         }
-        
-        // Update estimated time when limit or delay changes
+
         document.getElementById('limit').addEventListener('input', calculateEstimatedTime);
         document.getElementById('delay').addEventListener('input', calculateEstimatedTime);
-        
-        // Process Dashboard Functions
+
         function loadProcesses() {
             const now = Date.now();
-            // Throttle requests to at most every 2 seconds
             if (now - lastProcessUpdate < 2000) return;
             
             lastProcessUpdate = now;
@@ -1112,18 +1570,15 @@
         }
         
         function updateDashboard(data) {
-            // Update stats
             document.getElementById('active-users-count').textContent = data.totalActive;
             document.getElementById('today-shares').textContent = data.totalCompleted;
-            
-            // Calculate overall success rate
+
             if (data.totalCompleted > 0) {
-                // This is a simplified calculation - in production you'd want actual success rates
-                const successRate = Math.min(95, 80 + Math.random() * 15); // Simulated success rate
+                 
+                const successRate = Math.min(95, 80 + Math.random() * 15); 
                 document.getElementById('overall-success-rate').textContent = Math.round(successRate) + '%';
             }
-            
-            // Update active processes
+
             const activeContainer = document.getElementById('active-processes');
             const noActive = document.getElementById('no-active-processes');
             
@@ -1138,8 +1593,7 @@
                 noActive.style.display = 'block';
                 activeContainer.innerHTML = '';
             }
-            
-            // Update recent processes
+
             const recentContainer = document.getElementById('recent-processes');
             const noRecent = document.getElementById('no-recent-processes');
             
@@ -1181,8 +1635,7 @@
             const statusText = process.status ? process.status.charAt(0).toUpperCase() + process.status.slice(1).replace('_', ' ') : 'Unknown';
             const statusClass = statusColors[process.status] || 'status-stale';
             const statusIcon = statusIcons[process.status] || 'fa-circle';
-            
-            // Calculate time ago
+
             const startedTime = new Date(process.startedAt);
             const now = new Date();
             const diffMinutes = Math.floor((now - startedTime) / 60000);
@@ -1192,8 +1645,7 @@
             else if (diffMinutes < 60) timeAgo = `${diffMinutes}m ago`;
             else if (diffMinutes < 1440) timeAgo = `${Math.floor(diffMinutes/60)}h ago`;
             else timeAgo = `${Math.floor(diffMinutes/1440)}d ago`;
-            
-            // Progress bar for active processes
+
             const progressBar = type === 'active' && process.progress !== undefined ? `
                 <div class="mt-3">
                     <div class="flex justify-between text-sm text-gray-600 mb-1">
@@ -1205,8 +1657,7 @@
                     </div>
                 </div>
             ` : '';
-            
-            // Result summary for completed processes
+
             const resultSummary = type === 'completed' ? `
                 <div class="mt-3 flex justify-between text-sm">
                     <span class="text-green-600">
@@ -1249,47 +1700,40 @@
             
             return card;
         }
-        
-        // Start auto-refresh when dashboard is visible
+
         function startDashboardAutoRefresh() {
             if (autoRefreshInterval) {
                 clearInterval(autoRefreshInterval);
             }
-            autoRefreshInterval = setInterval(loadProcesses, 5000); // Refresh every 5 seconds
-            loadProcesses(); // Load immediately
+            autoRefreshInterval = setInterval(loadProcesses, 5000); 
+            loadProcesses(); 
         }
-        
-        // Stop auto-refresh when leaving dashboard
+
         function stopDashboardAutoRefresh() {
             if (autoRefreshInterval) {
                 clearInterval(autoRefreshInterval);
                 autoRefreshInterval = null;
             }
         }
-        
-        // Navigation function
+
         function navigateTo(sectionId) {
-            // Hide all sections
             document.getElementById('home-content').classList.add('hidden');
             document.getElementById('share-content').classList.add('hidden');
             document.getElementById('instructions').classList.add('hidden');
             document.getElementById('disclaimer').classList.add('hidden');
             document.getElementById('stats').classList.add('hidden');
             document.getElementById('process-dashboard').classList.add('hidden');
-            
-            // Show selected section
+
             const targetSection = document.getElementById(sectionId);
             targetSection.classList.remove('hidden');
-            
-            // Add animation class
+
             targetSection.querySelectorAll('.slide-in-left, .slide-in-right, .fade-in').forEach(el => {
                 el.style.animation = 'none';
                 setTimeout(() => {
                     el.style.animation = '';
                 }, 10);
             });
-            
-            // Update active nav link
+
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
             });
@@ -1297,27 +1741,23 @@
             document.querySelectorAll('.nav-link[data-section="' + sectionId + '"]').forEach(link => {
                 link.classList.add('active');
             });
-            
-            // Close mobile menu if open
+
             mobileMenu.classList.add('hidden');
             mobileMenuButton.classList.remove('active');
-            
-            // Start/stop dashboard auto-refresh
+
             if (sectionId === 'process-dashboard') {
                 startDashboardAutoRefresh();
             } else {
                 stopDashboardAutoRefresh();
             }
         }
-        
-        // Setup navigation links
+
         document.querySelectorAll('.nav-link, [data-section]').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const sectionId = this.getAttribute('data-section');
                 navigateTo(sectionId);
-                
-                // Update URL hash
+
                 if (sectionId === 'home-content') {
                     window.location.hash = 'home';
                 } else if (sectionId === 'share-content') {
@@ -1327,15 +1767,13 @@
                 }
             });
         });
-        
-        // Start button
+
         document.getElementById('start-btn').addEventListener('click', function(e) {
             e.preventDefault();
             navigateTo('share-content');
             window.location.hash = 'share-tool';
         });
-        
-        // Delay range slider
+
         const delayRange = document.getElementById('delay-range');
         const delayValue = document.getElementById('delay-value');
         const defaultDelay = document.getElementById('default-delay');
@@ -1356,8 +1794,7 @@
             defaultDelay.textContent = value + 'ms';
             calculateEstimatedTime();
         });
-        
-        // Update stats
+
         let totalShares = localStorage.getItem('totalShares') || 0;
         let successfulShares = localStorage.getItem('successfulShares') || 0;
         
@@ -1367,20 +1804,18 @@
             const successRate = Math.round((successfulShares / totalShares) * 100);
             document.getElementById('success-rate').textContent = successRate + '%';
         }
-        
-        // Stop button functionality
-        document.getElementById('stop-button').addEventListener('click', function() {
+
+        document.getElementById('stop-button').addEventListener('click', async function() {
             sharingActive = false;
             this.classList.add('hidden');
-            alert('Sharing stopped by user.');
+            await showAlert('Sharing Stopped', 'Sharing stopped by user.', 'info');
         });
-        
-        // Form submission
+
         document.getElementById('share-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             if (sharingActive) {
-                alert('Sharing is already in progress. Please wait or stop the current operation.');
+                await showAlert('Sharing in Progress', 'Sharing is already in progress. Please wait or stop the current operation.', 'warning');
                 return;
             }
             
@@ -1388,60 +1823,130 @@
             const link = document.getElementById('link').value;
             const limit = isUnlimited ? 0 : document.getElementById('limit').value;
             const delay = document.getElementById('delay').value;
-            
-            // Validate inputs
+
             if (!cookie.trim()) {
-                alert('Please enter your Facebook cookie');
+                await showAlert('Input Required', 'Please enter your Facebook cookie', 'warning');
                 return;
             }
             
             if (!link.trim()) {
-                alert('Please enter a Facebook post link');
+                await showAlert('Input Required', 'Please enter a Facebook post link', 'warning');
                 return;
             }
             
             if (delay < 1) {
-                alert('Delay must be at least 1ms');
+                await showAlert('Invalid Delay', 'Delay must be at least 1ms', 'warning');
                 return;
             }
             
             if (!isUnlimited && (limit < 100 || limit > 10000)) {
-                alert('Please enter a valid number of shares (100-10000)');
+                await showAlert('Invalid Share Count', 'Please enter a valid number of shares (100-10000)', 'warning');
                 return;
             }
-            
-            // Warning for 1ms delay with large shares
+
             if (delay == 1 && limit > 5000) {
-                if (!confirm('⚠️ EXTREME WARNING: Using 1ms delay with ' + limit + ' shares will complete in ' + Math.round(limit/1000) + ' seconds! Facebook WILL block your account. Continue?')) {
+                const result = await showConfirm({
+                    message: `⚠️ EXTREME WARNING: Using 1ms delay with ${limit} shares will complete in ${Math.round(limit/1000)} seconds!`,
+                    subtitle: 'Facebook WILL block your account!',
+                    details: [
+                        `This will complete in just ${Math.round(limit/1000)} seconds`,
+                        'Facebook will detect this as automated activity',
+                        'Your account may be temporarily or permanently blocked',
+                        'Use at your own risk'
+                    ],
+                    confirmText: 'I UNDERSTAND, CONTINUE ANYWAY',
+                    showSafe: true,
+                    safeText: 'USE 1000ms DELAY INSTEAD',
+                    extremeWarning: true
+                });
+                
+                if (result === 'cancel') {
                     return;
+                } else if (result === 'safe') {
+                    document.getElementById('delay').value = 1000;
+                    calculateEstimatedTime();
                 }
             } else if (delay == 1) {
-                if (!confirm('⚠️ WARNING: Using 1ms delay is extremely fast and may get your account blocked immediately. Are you sure?')) {
+                const result = await showConfirm({
+                    message: '⚠️ WARNING: Using 1ms delay is extremely fast',
+                    subtitle: 'This may get your account blocked immediately',
+                    details: [
+                        '1ms delay means 1000 shares/second',
+                        'Facebook will likely detect this as a bot',
+                        'Account restrictions are very likely',
+                        'Use with disposable accounts only'
+                    ],
+                    confirmText: 'I UNDERSTAND THE RISK',
+                    showSafe: true,
+                    safeText: 'USE 1000ms DELAY INSTEAD'
+                });
+                
+                if (result === 'cancel') {
                     return;
+                } else if (result === 'safe') {
+                    document.getElementById('delay').value = 1000;
+                    calculateEstimatedTime();
                 }
             }
-            
-            // Warning for unlimited mode
+
             if (isUnlimited) {
-                if (!confirm('⚠️ WARNING: Unlimited mode will share continuously until stopped. This may get your account permanently banned. Continue?')) {
+                const result = await showConfirm({
+                    message: '⚠️ WARNING: Unlimited Mode Activated',
+                    subtitle: 'This may get your account permanently banned',
+                    details: [
+                        'Will share continuously until stopped',
+                        'Facebook WILL detect this as suspicious activity',
+                        'Your account may be permanently banned',
+                        'Use with extreme caution and disposable accounts only'
+                    ],
+                    confirmText: 'CONTINUE WITH UNLIMITED',
+                    showSafe: true,
+                    safeText: 'USE LIMITED MODE (1000 shares)'
+                });
+                
+                if (result === 'cancel') {
                     return;
+                } else if (result === 'safe') {
+                    document.getElementById('no-limit-toggle').checked = false;
+                    isUnlimited = false;
+                    limitInput.disabled = false;
+                    limitInput.value = "1000";
+                    limitInput.classList.remove('opacity-50', 'cursor-not-allowed');
+                    limitSection.classList.remove('opacity-50');
+                    submitBtn.innerHTML = '<i class="fas fa-rocket mr-3"></i> Start Mass Sharing';
+                    submitBtn.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-pink-600');
+                    calculateEstimatedTime();
                 }
             }
-            
-            // Warning for large share counts
+
             if (!isUnlimited && limit >= 5000) {
-                if (!confirm('⚠️ WARNING: ' + limit + ' shares is a very large amount. This may get your account blocked. Continue?')) {
+                const result = await showConfirm({
+                    message: `⚠️ WARNING: ${limit} shares is a very large amount`,
+                    subtitle: 'This may get your account blocked',
+                    details: [
+                        `${limit} shares with ${delay}ms delay`,
+                        `Total time: ${Math.round((limit * delay) / 1000)} seconds`,
+                        'Facebook may flag this as suspicious activity',
+                        'Consider starting with a smaller test run first'
+                    ],
+                    confirmText: 'CONTINUE ANYWAY',
+                    showSafe: true,
+                    safeText: 'USE 500 SHARES INSTEAD'
+                });
+                
+                if (result === 'cancel') {
                     return;
+                } else if (result === 'safe') {
+                    document.getElementById('limit').value = 500;
+                    calculateEstimatedTime();
                 }
             }
             
             sharingActive = true;
-            
-            // Show loading indicator
+
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').classList.add('hidden');
-            
-            // Update loading text based on mode
+
             const loadingTitle = document.getElementById('loading-title');
             const loadingDesc = document.getElementById('loading-description');
             const stopButton = document.getElementById('stop-button');
@@ -1455,12 +1960,10 @@
                 loadingDesc.textContent = `Sharing ${limit.toLocaleString()} posts`;
                 stopButton.classList.add('hidden');
             }
-            
-            // Show remaining shares
+
             const remainingElement = document.getElementById('remaining-shares');
             const progressBar = document.getElementById('progress-bar');
-            
-            // Animate progress bar
+
             let progress = 0;
             const progressInterval = setInterval(() => {
                 if (progress < 90 && sharingActive) {
@@ -1492,8 +1995,7 @@
                 });
                 
                 const data = await response.json();
-                
-                // Update stats
+
                 if (data.status) {
                     totalShares = parseInt(totalShares) + parseInt(data.success_count);
                     successfulShares = parseInt(successfulShares) + parseInt(data.success_count);
@@ -1508,18 +2010,15 @@
                         document.getElementById('success-rate').textContent = successRate + '%';
                     }
                 }
-                
-                // Complete progress bar
+
                 clearInterval(progressInterval);
                 progressBar.style.width = '100%';
                 sharingActive = false;
                 stopButton.classList.add('hidden');
-                
-                // Hide loading indicator after delay
+
                 setTimeout(() => {
                     document.getElementById('loading').style.display = 'none';
                     
-                    // Show result
                     const resultDiv = document.getElementById('result');
                     const resultMsg = document.getElementById('result-message');
                     const resultDetails = document.getElementById('result-details');
@@ -1559,8 +2058,7 @@
                         modeIndicator.classList.remove('hidden');
                         resultIcon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
                     }
-                    
-                    // Reset progress bar
+
                     setTimeout(() => {
                         progressBar.style.width = '0%';
                         remainingElement.textContent = '';
@@ -1573,8 +2071,7 @@
                 sharingActive = false;
                 document.getElementById('loading').style.display = 'none';
                 stopButton.classList.add('hidden');
-                
-                // Show error
+
                 const resultDiv = document.getElementById('result');
                 resultDiv.classList.remove('hidden', 'border-green-200', 'bg-green-50');
                 resultDiv.classList.add('border-red-200', 'bg-red-50');
@@ -1585,14 +2082,12 @@
                 document.getElementById('mode-text').textContent = isUnlimited ? 'Unlimited' : 'Limited';
                 document.getElementById('mode-indicator').classList.remove('hidden');
                 document.getElementById('result-icon').innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
-                
-                // Reset progress bar
+
                 progressBar.style.width = '0%';
                 remainingElement.textContent = '';
             }
         });
-        
-        // Check URL hash on load
+
         window.addEventListener('load', function() {
             const hash = window.location.hash.substring(1);
             if (hash === 'share-tool') {
@@ -1606,18 +2101,21 @@
             } else if (hash === 'dashboard') {
                 navigateTo('process-dashboard');
             }
-            
-            // Set default delay to 1ms
+
             delayInput.value = 1;
             delayRange.value = 1;
             delayValue.textContent = '1ms';
             defaultDelay.textContent = '1ms';
-            
-            // Calculate initial estimated time
+
             calculateEstimatedTime();
+
+            setTimeout(() => {
+                showAlert('Welcome to Facebook Share Tool', 
+                    'Please use this tool responsibly. Misuse may lead to account restrictions.', 
+                    'info');
+            }, 1000);
         });
-        
-        // Add animation on scroll
+
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
@@ -1630,8 +2128,7 @@
                 }
             });
         }, observerOptions);
-        
-        // Observe all sections for animation
+
         document.querySelectorAll('section, .grid > div').forEach((el) => {
             observer.observe(el);
         });
