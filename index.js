@@ -51,43 +51,89 @@ app.post("/api/share", async (req, res) => {
   const delayMs = parseInt(delay, 10) || 1000;
   const isUnlimited = unlimited === true || unlimited === 'true' || unlimited === 'on';
 
+  console.log('📨 API Request:', { 
+    hasCookie: !!cookie, 
+    hasLink: !!post_link, 
+    limit, 
+    delayMs, 
+    isUnlimited 
+  });
+
   if (!cookie || !post_link) {
+    console.log('❌ Missing input');
     return res.json({ status: false, message: "Missing cookie or link." });
   }
 
-  // If unlimited, use a very large number or infinite loop with stop condition
   let limitNum;
+  
   if (isUnlimited) {
-    limitNum = 999999; // Very high number for "unlimited"
+    // Unlimited mode - use 10000 as max for safety
+    limitNum = 10000;
+    console.log('♾️ Unlimited mode - Max 10,000 shares');
   } else {
+    // Limited mode - validate 100-10000
     limitNum = parseInt(limit, 10);
-    if (!limitNum || limitNum < 1) {
+    
+    if (isNaN(limitNum)) {
+      console.log('❌ Invalid limit number');
       return res.json({ status: false, message: "Please enter a valid number of shares." });
     }
+    
+    // FRONTEND SYNC: 100-10000 shares validation
+    if (limitNum < 100) {
+      console.log('❌ Below minimum:', limitNum);
+      return res.json({ 
+        status: false, 
+        message: "Minimum shares is 100. Please increase the number of shares." 
+      });
+    }
+    
+    if (limitNum > 10000) {
+      console.log('❌ Above maximum:', limitNum);
+      return res.json({ 
+        status: false, 
+        message: "Maximum shares is 10,000. Please decrease the number of shares." 
+      });
+    }
+    
+    console.log(`✅ Valid share count: ${limitNum}`);
   }
 
   const ua = ua_list[Math.floor(Math.random() * ua_list.length)];
   const token = await extract_token(cookie, ua);
+  
   if (!token) {
-    return res.json({ status: false, message: "Token extraction failed." });
+    console.log('❌ Token extraction failed');
+    return res.json({ status: false, message: "Token extraction failed. Please check your cookie." });
   }
 
-  let success = 0;
-  let shouldContinue = true;
-  
-  // For unlimited mode, add a timeout or max iterations
-  const maxUnlimitedShares = 1000; // Safety limit for unlimited mode
-  const actualLimit = isUnlimited ? maxUnlimitedShares : limitNum;
+  console.log('✅ Token extracted successfully');
+  console.log(`🔄 Starting ${isUnlimited ? 'unlimited (max 10k)' : limitNum} shares with ${delayMs}ms delay`);
 
-  for (let i = 0; i < actualLimit && shouldContinue; i++) {
+  let success = 0;
+  let errors = 0;
+  const maxErrors = 3; // Stop after 3 consecutive errors
+  
+  // For progress logging
+  const logInterval = Math.max(1, Math.floor(limitNum / 10)); // Log every 10%
+  
+  for (let i = 0; i < limitNum; i++) {
     try {
-      console.log(`🔄 Sharing ${i + 1}/${isUnlimited ? '∞' : limitNum} (${success} successful)`);
+      // Log progress
+      if (i % logInterval === 0 || i === limitNum - 1) {
+        const progress = Math.round((i / limitNum) * 100);
+        console.log(`📊 Progress: ${progress}% (${i}/${limitNum}) - ${success} successful`);
+      }
       
       const response = await axios.post(
         "https://graph.facebook.com/v18.0/me/feed",
         null,
         {
-          params: { link: post_link, access_token: token, published: 0 },
+          params: { 
+            link: post_link, 
+            access_token: token, 
+            published: 0 
+          },
           headers: {
             "user-agent": ua,
             "Cookie": cookie
@@ -97,60 +143,101 @@ app.post("/api/share", async (req, res) => {
       
       if (response.data.id) {
         success++;
+        errors = 0; // Reset error counter
         
         // Add delay between shares if not the last one
-        if (i < actualLimit - 1) {
+        if (i < limitNum - 1 && delayMs > 0) {
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       } else {
-        console.log('❌ No ID returned, stopping...');
-        shouldContinue = false;
-        break;
+        console.log('❌ No ID returned from Facebook');
+        errors++;
+        if (errors >= maxErrors) {
+          console.log(`🛑 Stopping due to ${maxErrors} consecutive errors`);
+          break;
+        }
       }
     } catch (err) {
       console.error('❌ Share error:', err.message);
+      errors++;
       
-      // Check if error is due to rate limiting or token expiry
-      if (err.response && err.response.status === 400) {
+      // Enhanced error handling
+      if (err.response) {
         const errorData = err.response.data;
+        
+        // Token expired (190)
         if (errorData.error && errorData.error.code === 190) {
-          // Access token expired
           return res.json({ 
             status: false, 
             message: "Access token expired. Please refresh your cookie.", 
             success_count: success 
           });
-        } else if (errorData.error && errorData.error.code === 4) {
-          // Rate limited
+        }
+        
+        // Rate limiting (429 or 4)
+        if (err.response.status === 429 || (errorData.error && errorData.error.code === 4)) {
           return res.json({ 
             status: false, 
             message: "Rate limited by Facebook. Please try again later.", 
             success_count: success 
           });
         }
+        
+        // Permission error (10)
+        if (errorData.error && errorData.error.code === 10) {
+          return res.json({ 
+            status: false, 
+            message: "Permission denied. Your cookie may not have sharing permissions.", 
+            success_count: success 
+          });
+        }
+        
+        // Show Facebook error message if available
+        if (errorData.error && errorData.error.message) {
+          console.error('Facebook Error:', errorData.error.message);
+        }
       }
       
-      shouldContinue = false;
-      break;
+      if (errors >= maxErrors) {
+        console.log(`🛑 Stopping due to ${maxErrors} consecutive errors`);
+        break;
+      }
+      
+      // Wait before retrying after error
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
+  console.log(`🎯 Completed: ${success} successful shares out of ${limitNum} attempted`);
+  
+  // Generate appropriate message
   let message;
   if (isUnlimited) {
-    message = `✅ Unlimited sharing completed. Shared ${success} times before stopping.`;
+    message = `✅ Unlimited sharing completed. Successfully shared ${success} times.`;
   } else {
-    message = `✅ Shared ${success} out of ${limitNum} times with ${delayMs}ms delay.`;
+    const percentage = limitNum > 0 ? Math.round((success / limitNum) * 100) : 0;
+    message = `✅ Shared ${success} out of ${limitNum} times (${percentage}% success rate) with ${delayMs}ms delay.`;
   }
 
   res.json({
     status: true,
     message: message,
     success_count: success,
+    total_attempted: limitNum,
     unlimited_mode: isUnlimited
   });
 });
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`=========================================`);
+  console.log(`🚀 Facebook Share Tool Server Started`);
+  console.log(`📡 Port: ${port}`);
+  console.log(`🌐 http://localhost:${port}`);
+  console.log(`⚙️  Configuration:`);
+  console.log(`   • Shares Range: 100 - 10,000`);
+  console.log(`   • No Limit Mode: Enabled (max 10k)`);
+  console.log(`   • Delay Range: 1ms - 10,000ms`);
+  console.log(`   • Default Delay: 1ms`);
+  console.log(`=========================================`);
 });
