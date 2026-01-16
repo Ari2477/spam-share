@@ -1471,10 +1471,10 @@
                                 <p class="text-sm text-gray-600">Auto-refresh</p>
                             </div>
                         </div>
-                        <div class="flex items-center">
+                        <div class="flex items-center space-x-3">
                             <span class="text-sm text-gray-600 mr-3" id="last-update">Never</span>
-                            <button onclick="loadProcesses()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
-                                <i class="fas fa-redo-alt mr-2"></i> Refresh
+                            <button onclick="clearOldProcesses()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                <i class="fas fa-trash-alt mr-2"></i> Clear Old
                             </button>
                         </div>
                     </div>
@@ -1599,6 +1599,42 @@
                     cleanup();
                     resolve('safe');
                 };
+            });
+        }
+
+        function clearOldProcesses() {
+            showConfirm({
+                message: 'Clear Old Processes',
+                subtitle: 'Are you sure you want to clear all completed/failed processes?',
+                details: [
+                    'This will remove all completed and failed processes from the recent list',
+                    'Active processes will NOT be affected',
+                    'This action cannot be undone'
+                ],
+                confirmText: 'YES, CLEAR ALL',
+                showSafe: false
+            }).then((result) => {
+                if (result === 'confirm') {
+                    fetch('/api/clear-processes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status) {
+                            showAlert('Success', 'Old processes have been cleared!', 'success');
+                            loadProcesses();
+                        } else {
+                            showAlert('Error', data.message || 'Failed to clear processes', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error clearing processes:', error);
+                        showAlert('Error', 'Failed to clear processes. Please try again.', 'error');
+                    });
+                }
             });
         }
 
