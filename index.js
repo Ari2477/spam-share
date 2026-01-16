@@ -3,11 +3,10 @@ const axios = require('axios');
 const path = require('path');
 
 const app = express();
-app.use(express.json());  // For parsing JSON bodies
+app.use(express.json());  
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public'));
 
-// Serve static files from public directory
 app.use(express.static('public'));
 
 const ua_list = [
@@ -16,10 +15,9 @@ const ua_list = [
   "Mozilla/5.0 (Linux; Android 11; G91 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/106.0.5249.126 Mobile Safari/537.36[FBAN/EMA;FBLC/fr_FR;FBAV/325.0.1.4.108;]"
 ];
 
-// In-memory storage for active processes (in production use Redis or database)
 const activeProcesses = new Map();
 const completedProcesses = [];
-const MAX_COMPLETED_PROCESSES = 50; // Keep last 50 processes
+const MAX_COMPLETED_PROCESSES = 50; 
 
 function extract_token(cookie, ua) {
   try {
@@ -42,19 +40,16 @@ function extract_token(cookie, ua) {
   }
 }
 
-// Generate unique ID for each process
 function generateProcessId() {
   return 'proc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// Clean up old processes
 function cleanupOldProcesses() {
   if (completedProcesses.length > MAX_COMPLETED_PROCESSES) {
     completedProcesses.splice(0, completedProcesses.length - MAX_COMPLETED_PROCESSES);
   }
 }
 
-// Serve the single HTML file for all routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -63,7 +58,6 @@ app.get('/share', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// New endpoint: Get all active processes
 app.get('/api/processes', (req, res) => {
   const processes = Array.from(activeProcesses.values()).map(proc => ({
     id: proc.id,
@@ -78,7 +72,7 @@ app.get('/api/processes', (req, res) => {
     linkPreview: proc.linkPreview
   }));
   
-  const recentCompleted = completedProcesses.slice(-10).reverse(); // Show last 10 completed
+  const recentCompleted = completedProcesses.slice(-10).reverse(); 
   
   res.json({
     status: true,
@@ -90,7 +84,6 @@ app.get('/api/processes', (req, res) => {
   });
 });
 
-// New endpoint: Get process details
 app.get('/api/process/:id', (req, res) => {
   const processId = req.params.id;
   const process = activeProcesses.get(processId) || 
@@ -127,7 +120,7 @@ app.post("/api/share", async (req, res) => {
   let limitNum;
   
   if (isUnlimited) {
-    limitNum = 10000; // Max 10,000 even for unlimited
+    limitNum = 10000; 
     console.log('♾️ Unlimited mode - Max 10,000 shares');
   } else {
     limitNum = parseInt(limit, 10);
@@ -156,7 +149,6 @@ app.post("/api/share", async (req, res) => {
     console.log(`✅ Valid share count: ${limitNum}`);
   }
 
-  // Extract username from cookie for display
   let username = 'Anonymous';
   try {
     const userMatch = cookie.match(/c_user=(\d+)/);
@@ -164,10 +156,8 @@ app.post("/api/share", async (req, res) => {
       username = 'User_' + userMatch[1].substring(0, 6);
     }
   } catch (e) {
-    // If can't extract username, keep as Anonymous
   }
 
-  // Create process record
   const processId = generateProcessId();
   const processData = {
     id: processId,
@@ -186,17 +176,14 @@ app.post("/api/share", async (req, res) => {
     logs: []
   };
 
-  // Add initial log
   processData.logs.push({
     time: new Date().toISOString(),
     message: `Process started: ${limitNum} shares with ${delayMs}ms delay`,
     type: 'info'
   });
 
-  // Store process
   activeProcesses.set(processId, processData);
 
-  // Update status
   processData.status = 'extracting_token';
   processData.logs.push({
     time: new Date().toISOString(),
@@ -204,7 +191,6 @@ app.post("/api/share", async (req, res) => {
     type: 'info'
   });
 
-  // Extract token
   const ua = ua_list[Math.floor(Math.random() * ua_list.length)];
   const token = await extract_token(cookie, ua);
   
@@ -215,8 +201,7 @@ app.post("/api/share", async (req, res) => {
       message: 'Token extraction failed',
       type: 'error'
     });
-    
-    // Move to completed
+
     activeProcesses.delete(processId);
     completedProcesses.push(processData);
     cleanupOldProcesses();
@@ -238,15 +223,12 @@ app.post("/api/share", async (req, res) => {
   let success = 0;
   let errors = 0;
   const maxErrors = 3;
-  
-  // Start sharing process
+
   for (let i = 0; i < limitNum; i++) {
-    // Update process progress
     processData.progress = Math.round((i / limitNum) * 100);
     processData.successful = success;
     processData.failed = errors;
-    
-    // Update every 5% or every 100 shares, whichever is smaller
+
     const updateInterval = Math.max(1, Math.min(Math.floor(limitNum / 20), 100));
     
     if (i % updateInterval === 0 || i === limitNum - 1) {
@@ -277,11 +259,9 @@ app.post("/api/share", async (req, res) => {
       if (response.data.id) {
         success++;
         errors = 0;
-        
-        // Update process
+
         processData.successful = success;
-        
-        // Add delay between shares
+
         if (i < limitNum - 1 && delayMs > 0) {
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
@@ -314,8 +294,7 @@ app.post("/api/share", async (req, res) => {
         message: `Share ${i + 1} error: ${err.message}`,
         type: 'error'
       });
-      
-      // Enhanced error handling
+
       if (err.response) {
         const errorData = err.response.data;
         
@@ -326,8 +305,7 @@ app.post("/api/share", async (req, res) => {
             message: 'Access token expired',
             type: 'error'
           });
-          
-          // Move to completed
+
           activeProcesses.delete(processId);
           completedProcesses.push(processData);
           cleanupOldProcesses();
@@ -346,8 +324,7 @@ app.post("/api/share", async (req, res) => {
             message: 'Rate limited by Facebook',
             type: 'error'
           });
-          
-          // Move to completed
+
           activeProcesses.delete(processId);
           completedProcesses.push(processData);
           cleanupOldProcesses();
@@ -368,13 +345,11 @@ app.post("/api/share", async (req, res) => {
         });
         break;
       }
-      
-      // Wait before retrying after error
+
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
-  // Process completed
   processData.status = 'completed';
   processData.progress = 100;
   processData.successful = success;
@@ -388,13 +363,11 @@ app.post("/api/share", async (req, res) => {
   });
 
   console.log(`🎯 Completed: ${success} successful shares out of ${limitNum} attempted`);
-  
-  // Move from active to completed
+
   activeProcesses.delete(processId);
   completedProcesses.push(processData);
   cleanupOldProcesses();
-  
-  // Generate response message
+
   let message;
   if (isUnlimited) {
     message = `✅ Unlimited sharing completed. Successfully shared ${success} times.`;
@@ -413,7 +386,6 @@ app.post("/api/share", async (req, res) => {
   });
 });
 
-// Cleanup interval for stale processes (every 5 minutes)
 setInterval(() => {
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
@@ -421,7 +393,6 @@ setInterval(() => {
   for (const [id, process] of activeProcesses.entries()) {
     const startTime = new Date(process.startedAt).getTime();
     if (now - startTime > oneHour) {
-      // Process is stale (older than 1 hour)
       process.status = 'stale';
       process.logs.push({
         time: new Date().toISOString(),
@@ -434,7 +405,7 @@ setInterval(() => {
       cleanupOldProcesses();
     }
   }
-}, 5 * 60 * 1000); // 5 minutes
+}, 5 * 60 * 1000); 
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
