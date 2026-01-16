@@ -1,41 +1,10 @@
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
-const fs = require('fs');
-const cors = require('cors');
 
 const app = express();
-
-// Middleware
-app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-
-// Create public folder if it doesn't exist
-if (!fs.existsSync('public')) {
-  fs.mkdirSync('public');
-}
-
-// Copy index.html to public folder if needed
-const staticHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facebook Share boost | Auto Sharing Tool</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- CSS content from your static file -->
-</head>
-<body>
-    <!-- Your complete HTML content -->
-</body>
-</html>`;
-
-// Only write if file doesn't exist
-if (!fs.existsSync('public/index.html')) {
-  fs.writeFileSync('public/index.html', staticHtml);
-}
 
 const ua_list = [
   "Mozilla/5.0 (Linux; Android 10; Wildfire E Lite) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/105.0.5195.136 Mobile Safari/537.36[FBAN/EMA;FBLC/en_US;FBAV/298.0.0.10.115;]",
@@ -43,39 +12,43 @@ const ua_list = [
   "Mozilla/5.0 (Linux; Android 11; G91 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/106.0.5249.126 Mobile Safari/537.36[FBAN/EMA;FBLC/fr_FR;FBAV/325.0.1.4.108;]"
 ];
 
-// ENHANCED SHARE LIMITS CONFIGURATION
-const SHARE_LIMITS = {
-  MAX_PER_REQUEST: 50,           
-  MAX_PER_HOUR: 200,             
-  MAX_PER_DAY: 1000,             
-  MIN_DELAY: 1,                 
-  MAX_DELAY: 5000,               
-  DEFAULT_DELAY: 1,              
-  REQUEST_TIMEOUT: 30000,        
-  TOKEN_TIMEOUT: 10000           
+// REAL DATA STORAGE
+const realData = {
+  userLimits: new Map(),
+  userHistory: new Map(),
+  userStats: new Map(),
+  processLogs: new Map(),
+  activeProcesses: new Map()
 };
 
-// Store user limits and history (in production, use database)
-const userData = {
-  limits: new Map(),      
-  history: new Map(),     
-  accounts: new Map()     
-};
-
-// Helper function to get user identifier from cookie
 function getUserId(cookie) {
-  // Create a unique ID from cookie (first 100 chars)
-  return Buffer.from(cookie.substring(0, 100)).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+  return Buffer.from(cookie.substring(0, 100)).toString('base64');
 }
 
-// Helper function to check and update user limits
-function checkUserLimits(userId, requestedShares) {
+function extract_token(cookie, ua) {
+  return axios.get("https://business.facebook.com/business_locations", {
+    headers: {
+      "user-agent": ua,
+      "referer": "https://www.facebook.com/",
+      "Cookie": cookie
+    },
+    timeout: 10000
+  }).then(res => {
+    const tokenMatch = res.data.match(/(EAAG\w+)/);
+    return tokenMatch ? tokenMatch[1] : null;
+  }).catch(err => {
+    console.error('Token error:', err.message);
+    return null;
+  });
+}
+
+// REAL LIMIT CHECKING
+function checkRealLimits(userId, requestedShares) {
   const now = Date.now();
   const userKey = `user_${userId}`;
   
-  // Initialize user data if not exists
-  if (!userData.limits.has(userKey)) {
-    userData.limits.set(userKey, {
+  if (!realData.userLimits.has(userKey)) {
+    realData.userLimits.set(userKey, {
       sharesToday: 0,
       sharesThisHour: 0,
       lastShareTime: 0,
@@ -87,108 +60,70 @@ function checkUserLimits(userId, requestedShares) {
     });
   }
   
-  const user = userData.limits.get(userKey);
+  const user = realData.userLimits.get(userKey);
   
-  // Reset counters if needed
-  if (now - user.lastResetHour > 3600000) { // 1 hour
+  // Reset counters
+  if (now - user.lastResetHour > 3600000) {
     user.sharesThisHour = 0;
     user.lastResetHour = now;
   }
   
-  if (now - user.lastResetDay > 86400000) { // 24 hours
+  if (now - user.lastResetDay > 86400000) {
     user.sharesToday = 0;
     user.lastResetDay = now;
   }
   
   // Check limits
-  const errors = [];
+  const MAX_PER_REQUEST = 50;
+  const MAX_PER_HOUR = 200;
+  const MAX_PER_DAY = 1000;
   
-  if (requestedShares > SHARE_LIMITS.MAX_PER_REQUEST) {
-    errors.push(`Cannot share more than ${SHARE_LIMITS.MAX_PER_REQUEST} times per request.`);
+  if (requestedShares > MAX_PER_REQUEST) {
+    return { allowed: false, message: `Max ${MAX_PER_REQUEST} shares per request` };
   }
   
-  if (user.sharesThisHour + requestedShares > SHARE_LIMITS.MAX_PER_HOUR) {
-    const remaining = SHARE_LIMITS.MAX_PER_HOUR - user.sharesThisHour;
-    errors.push(`Hourly limit reached. You can only share ${remaining} more times this hour.`);
+  if (user.sharesThisHour + requestedShares > MAX_PER_HOUR) {
+    return { allowed: false, message: `Hourly limit reached (${MAX_PER_HOUR}/hour)` };
   }
   
-  if (user.sharesToday + requestedShares > SHARE_LIMITS.MAX_PER_DAY) {
-    const remaining = SHARE_LIMITS.MAX_PER_DAY - user.sharesToday;
-    errors.push(`Daily limit reached. You can only share ${remaining} more times today.`);
+  if (user.sharesToday + requestedShares > MAX_PER_DAY) {
+    return { allowed: false, message: `Daily limit reached (${MAX_PER_DAY}/day)` };
   }
   
-  if (errors.length > 0) {
-    return {
-      allowed: false,
-      errors: errors,
-      limits: {
-        sharesToday: user.sharesToday,
-        sharesThisHour: user.sharesThisHour,
-        maxPerRequest: SHARE_LIMITS.MAX_PER_REQUEST,
-        maxPerHour: SHARE_LIMITS.MAX_PER_HOUR,
-        maxPerDay: SHARE_LIMITS.MAX_PER_DAY
-      }
-    };
+  return { allowed: true, user };
+}
+
+// ADD PROCESS LOG
+function addProcessLog(userId, processId, message, type = 'info') {
+  const logKey = `process_${processId}`;
+  if (!realData.processLogs.has(logKey)) {
+    realData.processLogs.set(logKey, []);
   }
   
-  // Update limits (will be finalized after successful sharing)
-  return {
-    allowed: true,
-    limits: {
-      sharesToday: user.sharesToday,
-      sharesThisHour: user.sharesThisHour,
-      maxPerRequest: SHARE_LIMITS.MAX_PER_REQUEST,
-      maxPerHour: SHARE_LIMITS.MAX_PER_HOUR,
-      maxPerDay: SHARE_LIMITS.MAX_PER_DAY
-    }
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    message: message,
+    type: type
   };
-}
-
-// Function to extract Facebook token
-async function extract_token(cookie, ua) {
-  try {
-    const response = await axios.get("https://business.facebook.com/business_locations", {
-      headers: {
-        "user-agent": ua,
-        "referer": "https://www.facebook.com/",
-        "Cookie": cookie,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1"
-      },
-      timeout: SHARE_LIMITS.TOKEN_TIMEOUT
-    });
-    
-    const tokenMatch = response.data.match(/(EAAG\w+)/);
-    if (tokenMatch) {
-      console.log(`✓ Token extracted successfully (${tokenMatch[1].substring(0, 10)}...)`);
-      return tokenMatch[1];
-    }
-    
-    // Try alternative token extraction
-    const altTokenMatch = response.data.match(/access_token":"([^"]+)"/);
-    if (altTokenMatch) {
-      console.log(`✓ Alternative token extracted (${altTokenMatch[1].substring(0, 10)}...)`);
-      return altTokenMatch[1];
-    }
-    
-    console.log('✗ No access token found in response');
-    return null;
-    
-  } catch (err) {
-    console.error('Token extraction error:', err.message);
-    if (err.response) {
-      console.error('Response status:', err.response.status);
-      console.error('Response headers:', err.response.headers);
-    }
-    return null;
+  
+  realData.processLogs.get(logKey).push(logEntry);
+  
+  // Also update user history
+  if (!realData.userHistory.has(userId)) {
+    realData.userHistory.set(userId, []);
   }
+  
+  // Keep only last 100 logs per process
+  const logs = realData.processLogs.get(logKey);
+  if (logs.length > 100) {
+    logs.shift();
+  }
+  
+  return logEntry;
 }
 
-// Function to share post
-async function sharePost(token, cookie, post_link, ua, attempt = 1) {
+// REAL SHARE FUNCTION
+async function realShare(token, cookie, post_link, ua) {
   try {
     const response = await axios.post(
       "https://graph.facebook.com/v18.0/me/feed",
@@ -197,15 +132,13 @@ async function sharePost(token, cookie, post_link, ua, attempt = 1) {
         params: { 
           link: post_link, 
           access_token: token, 
-          published: "0"
+          published: 0 
         },
         headers: {
           "user-agent": ua,
-          "Cookie": cookie,
-          "Accept": "application/json",
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Cookie": cookie
         },
-        timeout: SHARE_LIMITS.REQUEST_TIMEOUT
+        timeout: 15000
       }
     );
     
@@ -219,239 +152,140 @@ async function sharePost(token, cookie, post_link, ua, attempt = 1) {
       return {
         success: false,
         error: "No post ID returned",
-        message: "Facebook API did not return post ID"
+        message: "Facebook API response missing ID"
       };
     }
-    
   } catch (err) {
     const errorData = err.response?.data?.error || {};
-    const errorCode = errorData.code;
-    const errorMessage = errorData.message || err.message;
-    
-    // Retry logic for certain errors
-    if (attempt < 3 && (errorCode === 4 || errorCode === 17 || errorCode === 32)) {
-      console.log(`Retrying share (attempt ${attempt + 1}/3)...`);
-      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
-      return sharePost(token, cookie, post_link, ua, attempt + 1);
-    }
-    
     return {
       success: false,
-      error: errorMessage,
-      code: errorCode,
-      message: `Share failed: ${errorMessage}`
+      error: errorData.message || err.message,
+      code: errorData.code,
+      message: `API Error: ${errorData.message || err.message}`
     };
   }
 }
 
-// ============= ROUTES =============
-
-// Home page - serve static HTML
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// API Health Check
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "online",
-    timestamp: new Date().toISOString(),
-    version: "1.0.0",
-    limits: SHARE_LIMITS
-  });
-});
-
-// Get user limits
-app.post("/api/limits", (req, res) => {
-  try {
-    const { cookie } = req.body;
-    
-    if (!cookie) {
-      return res.json({
-        status: false,
-        message: "Cookie is required"
-      });
-    }
-    
-    const userId = getUserId(cookie);
-    const limitCheck = checkUserLimits(userId, 0);
-    
-    res.json({
-      status: true,
-      limits: limitCheck.limits,
-      remaining: {
-        today: SHARE_LIMITS.MAX_PER_DAY - (limitCheck.limits?.sharesToday || 0),
-        hour: SHARE_LIMITS.MAX_PER_HOUR - (limitCheck.limits?.sharesThisHour || 0),
-        request: SHARE_LIMITS.MAX_PER_REQUEST
-      }
-    });
-    
-  } catch (error) {
-    console.error('Limits error:', error);
-    res.json({
-      status: false,
-      message: "Server error checking limits"
-    });
-  }
-});
-
-// Main Share API Endpoint
+// MAIN SHARE ENDPOINT
 app.post("/api/share", async (req, res) => {
-  console.log('\n' + '='.repeat(50));
-  console.log('📦 NEW SHARE REQUEST RECEIVED');
-  console.log('='.repeat(50));
+  console.log('\n=== REAL SHARE PROCESS STARTED ===');
   
   try {
-    const { cookie, link: post_link, limit, delay = SHARE_LIMITS.DEFAULT_DELAY } = req.body;
+    const { cookie, link: post_link, limit, delay = 1 } = req.body;
     
-    // Validate inputs
-    if (!cookie) {
-      console.log('✗ Missing cookie');
+    if (!cookie || !post_link || !limit) {
       return res.json({ 
         status: false, 
-        message: "Facebook cookie is required." 
-      });
-    }
-    
-    if (!post_link) {
-      console.log('✗ Missing post link');
-      return res.json({ 
-        status: false, 
-        message: "Post link is required." 
+        message: "Missing required parameters: cookie, link, limit" 
       });
     }
     
     const limitNum = parseInt(limit, 10);
-    if (!limitNum || isNaN(limitNum) || limitNum < 1) {
-      console.log('✗ Invalid share limit:', limit);
+    const delayNum = Math.max(1, parseInt(delay, 10)); // At least 1ms
+    
+    if (limitNum < 1 || limitNum > 50) {
       return res.json({ 
         status: false, 
-        message: "Valid share limit (min 1) is required." 
+        message: "Limit must be between 1 and 50" 
       });
     }
     
-    const delayNum = parseInt(delay, 10);
-    if (isNaN(delayNum) || delayNum < SHARE_LIMITS.MIN_DELAY || delayNum > SHARE_LIMITS.MAX_DELAY) {
-      console.log('✗ Invalid delay:', delay);
-      return res.json({ 
-        status: false, 
-        message: `Delay must be between ${SHARE_LIMITS.MIN_DELAY}ms and ${SHARE_LIMITS.MAX_DELAY}ms.` 
-      });
-    }
-    
-    console.log(`✓ Input validated: ${limitNum} shares, ${delayNum}ms delay`);
-    
-    // Check user limits
     const userId = getUserId(cookie);
-    const limitCheck = checkUserLimits(userId, limitNum);
+    const processId = Date.now().toString();
     
+    // Start process tracking
+    realData.activeProcesses.set(processId, {
+      userId: userId,
+      startTime: new Date().toISOString(),
+      status: 'processing',
+      progress: 0,
+      total: limitNum
+    });
+    
+    addProcessLog(userId, processId, `🚀 Starting REAL share process for ${limitNum} shares`, 'start');
+    addProcessLog(userId, processId, `📎 Post: ${post_link.substring(0, 50)}...`, 'info');
+    addProcessLog(userId, processId, `⏱️ Delay between shares: ${delayNum}ms`, 'info');
+    
+    // Check limits
+    const limitCheck = checkRealLimits(userId, limitNum);
     if (!limitCheck.allowed) {
-      console.log('✗ Limit check failed:', limitCheck.errors);
-      return res.json({
-        status: false,
-        message: limitCheck.errors.join(' '),
-        limits: limitCheck.limits
-      });
+      addProcessLog(userId, processId, `❌ Limit check failed: ${limitCheck.message}`, 'error');
+      realData.activeProcesses.delete(processId);
+      return res.json({ status: false, message: limitCheck.message });
     }
     
-    console.log('✓ User limits check passed');
+    addProcessLog(userId, processId, '✅ Limits check passed', 'success');
     
-    // Get random user agent
+    // Get token
     const ua = ua_list[Math.floor(Math.random() * ua_list.length)];
-    console.log(`✓ Using User-Agent: ${ua.substring(0, 50)}...`);
+    addProcessLog(userId, processId, '🔑 Extracting Facebook token...', 'info');
     
-    // Extract Facebook token
-    console.log('🔑 Extracting Facebook token...');
     const token = await extract_token(cookie, ua);
-    
     if (!token) {
-      console.log('✗ Token extraction failed');
+      addProcessLog(userId, processId, '❌ Failed to extract Facebook token', 'error');
+      realData.activeProcesses.delete(processId);
       return res.json({ 
         status: false, 
-        message: "Failed to extract Facebook access token. Check your cookie." 
+        message: "Token extraction failed. Check your cookie." 
       });
     }
     
-    console.log(`✓ Token extracted: ${token.substring(0, 15)}...`);
+    addProcessLog(userId, processId, `✅ Token extracted (${token.substring(0, 15)}...)`, 'success');
     
-    // Start sharing process
-    console.log('🚀 Starting share process...');
-    const results = [];
-    let successCount = 0;
-    let failedCount = 0;
-    let consecutiveErrors = 0;
-    const maxConsecutiveErrors = 5;
-    
-    const userKey = `user_${userId}`;
-    const user = userData.limits.get(userKey);
-    
-    // Update user limits (pre-emptive)
+    // Update limits
+    const user = limitCheck.user;
     user.sharesToday += limitNum;
     user.sharesThisHour += limitNum;
     user.totalShares += limitNum;
     
-    // Process each share
+    // REAL SHARING PROCESS
+    let successCount = 0;
+    let failedCount = 0;
+    const results = [];
+    
+    addProcessLog(userId, processId, '🔄 Starting REAL sharing process...', 'processing');
+    
     for (let i = 0; i < limitNum; i++) {
-      try {
-        if (i > 0 && delayNum > 0) {
-          await new Promise(resolve => setTimeout(resolve, delayNum));
-        }
-        
-        console.log(`📤 Share ${i + 1}/${limitNum}...`);
-        const shareResult = await sharePost(token, cookie, post_link, ua);
-        
-        const result = {
-          index: i + 1,
-          timestamp: new Date().toISOString(),
-          ...shareResult
-        };
-        
-        results.push(result);
-        
-        if (shareResult.success) {
-          successCount++;
-          user.successfulShares++;
-          consecutiveErrors = 0; // Reset error counter
-          console.log(`   ✅ Success (Post ID: ${shareResult.postId})`);
-        } else {
-          failedCount++;
-          user.failedShares++;
-          consecutiveErrors++;
-          console.log(`   ❌ Failed: ${shareResult.error}`);
-
-          if (consecutiveErrors >= maxConsecutiveErrors) {
-            console.log(`   ⚠️ Stopping due to ${consecutiveErrors} consecutive errors`);
-            break;
-          }
-        }
-        
-      } catch (error) {
+      // Update progress
+      const progress = Math.round(((i + 1) / limitNum) * 100);
+      const activeProcess = realData.activeProcesses.get(processId);
+      if (activeProcess) {
+        activeProcess.progress = progress;
+        activeProcess.current = i + 1;
+      }
+      
+      // Add delay (except for first share)
+      if (i > 0 && delayNum > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayNum));
+      }
+      
+      // REAL API CALL
+      addProcessLog(userId, processId, `📤 Share ${i + 1}/${limitNum}...`, 'processing');
+      
+      const shareResult = await realShare(token, cookie, post_link, ua);
+      results.push({
+        index: i + 1,
+        timestamp: new Date().toISOString(),
+        ...shareResult
+      });
+      
+      if (shareResult.success) {
+        successCount++;
+        user.successfulShares++;
+        addProcessLog(userId, processId, `✅ Share ${i + 1} successful`, 'success');
+      } else {
         failedCount++;
         user.failedShares++;
-        consecutiveErrors++;
-        
-        const errorResult = {
-          index: i + 1,
-          timestamp: new Date().toISOString(),
-          success: false,
-          error: error.message,
-          message: "Unexpected error during sharing"
-        };
-        
-        results.push(errorResult);
-        console.log(`   💥 Unexpected error: ${error.message}`);
-        
-        if (consecutiveErrors >= maxConsecutiveErrors) {
-          console.log(`   ⚠️ Stopping due to ${consecutiveErrors} consecutive errors`);
-          break;
-        }
+        addProcessLog(userId, processId, `❌ Share ${i + 1} failed: ${shareResult.error}`, 'error');
       }
     }
-
+    
+    // Update user last share time
     user.lastShareTime = Date.now();
-
+    
+    // Save to history
     const historyEntry = {
-      id: Date.now().toString(),
+      id: processId,
       userId: userId,
       postLink: post_link,
       limit: limitNum,
@@ -459,30 +293,46 @@ app.post("/api/share", async (req, res) => {
       success: successCount,
       failed: failedCount,
       results: results,
-      startedAt: new Date().toISOString(),
+      startedAt: realData.activeProcesses.get(processId)?.startTime,
       completedAt: new Date().toISOString(),
-      totalTime: Date.now() - (user.lastShareTime - (limitNum * delayNum))
+      totalTime: Date.now() - new Date(realData.activeProcesses.get(processId)?.startTime).getTime()
     };
-
-    if (!userData.history.has(userId)) {
-      userData.history.set(userId, []);
+    
+    if (!realData.userHistory.has(userId)) {
+      realData.userHistory.set(userId, []);
     }
     
-    userData.history.get(userId).push(historyEntry);
-
-    console.log('\n' + '='.repeat(50));
-    console.log('📊 SHARE PROCESS COMPLETED');
-    console.log('='.repeat(50));
-    console.log(`✅ Successful: ${successCount}`);
-    console.log(`❌ Failed: ${failedCount}`);
-    console.log(`⏱️  Total time: ${historyEntry.totalTime}ms`);
-    console.log(`📈 Success rate: ${limitNum > 0 ? Math.round((successCount / limitNum) * 100) : 0}%`);
-    console.log(`👤 User stats - Today: ${user.sharesToday}, This hour: ${user.sharesThisHour}`);
-    console.log('='.repeat(50) + '\n');
-
+    realData.userHistory.get(userId).push(historyEntry);
+    
+    // Update stats
+    realData.userStats.set(userId, {
+      totalShares: user.totalShares,
+      successfulShares: user.successfulShares,
+      failedShares: user.failedShares,
+      successRate: user.totalShares > 0 ? 
+        Math.round((user.successfulShares / user.totalShares) * 100) : 0,
+      lastActivity: new Date().toISOString()
+    });
+    
+    // Complete process
+    addProcessLog(userId, processId, 
+      `🎉 REAL PROCESS COMPLETED: ${successCount} successful, ${failedCount} failed`, 
+      'complete'
+    );
+    
+    const activeProcess = realData.activeProcesses.get(processId);
+    if (activeProcess) {
+      activeProcess.status = 'completed';
+      activeProcess.endTime = new Date().toISOString();
+      activeProcess.successCount = successCount;
+      activeProcess.failedCount = failedCount;
+    }
+    
+    console.log(`=== REAL SHARE PROCESS COMPLETED: ${successCount}/${limitNum} successful ===\n`);
+    
     res.json({
       status: true,
-      message: `Sharing completed: ${successCount} successful, ${failedCount} failed`,
+      message: `REAL PROCESS: ${successCount} successful, ${failedCount} failed`,
       summary: {
         total: limitNum,
         success: successCount,
@@ -491,75 +341,130 @@ app.post("/api/share", async (req, res) => {
         total_time: historyEntry.totalTime
       },
       results: results,
+      process_id: processId,
       limits: {
-        remaining_today: SHARE_LIMITS.MAX_PER_DAY - user.sharesToday,
-        remaining_hour: SHARE_LIMITS.MAX_PER_HOUR - user.sharesThisHour,
+        remaining_today: 1000 - user.sharesToday,
+        remaining_hour: 200 - user.sharesThisHour,
         shares_today: user.sharesToday,
         shares_hour: user.sharesThisHour,
-        max_per_request: SHARE_LIMITS.MAX_PER_REQUEST
-      },
-      history_id: historyEntry.id
+        max_per_request: 50
+      }
     });
     
   } catch (error) {
-    console.error('\n💥 UNEXPECTED ERROR IN SHARE PROCESS:');
-    console.error(error.stack);
+    console.error('REAL PROCESS ERROR:', error);
+    
+    // Log error
+    const userId = req.body.cookie ? getUserId(req.body.cookie) : 'unknown';
+    const processId = Date.now().toString();
+    addProcessLog(userId, processId, `💥 PROCESS ERROR: ${error.message}`, 'error');
     
     res.json({
       status: false,
-      message: "Server error: " + error.message,
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: "REAL PROCESS ERROR: " + error.message
     });
   }
 });
 
-app.post("/api/history", (req, res) => {
-  try {
-    const { cookie, limit = 10 } = req.body;
-    
-    if (!cookie) {
-      return res.json({
-        status: false,
-        message: "Cookie is required"
-      });
-    }
-    
-    const userId = getUserId(cookie);
-    const userHistory = userData.history.get(userId) || [];
-
-    const limitedHistory = userHistory
-      .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
-      .slice(0, parseInt(limit));
-    
-    res.json({
-      status: true,
-      history: limitedHistory,
-      total: userHistory.length
-    });
-    
-  } catch (error) {
-    console.error('History error:', error);
-    res.json({
-      status: false,
-      message: "Error fetching history"
-    });
-  }
-});
-
-app.post("/api/stats", (req, res) => {
+// REAL PROCESS HISTORY
+app.post("/api/process-history", async (req, res) => {
   try {
     const { cookie } = req.body;
     
     if (!cookie) {
-      return res.json({
-        status: false,
-        message: "Cookie is required"
+      return res.json({ status: false, message: "Cookie required" });
+    }
+    
+    const userId = getUserId(cookie);
+    const userHistory = realData.userHistory.get(userId) || [];
+    const processLogs = [];
+    
+    // Get all process logs for this user
+    for (const [processId, logs] of realData.processLogs) {
+      if (processId.startsWith('process_')) {
+        const processData = realData.activeProcesses.get(processId.replace('process_', ''));
+        if (processData && processData.userId === userId) {
+          processLogs.push({
+            processId: processId.replace('process_', ''),
+            logs: logs.slice(-20), // Last 20 logs
+            status: processData.status,
+            progress: processData.progress,
+            startTime: processData.startTime
+          });
+        }
+      }
+    }
+    
+    // Sort by recent
+    processLogs.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    
+    res.json({
+      status: true,
+      history: userHistory.slice(-10).reverse(), // Last 10 sessions
+      active_processes: processLogs.filter(p => p.status === 'processing'),
+      recent_logs: processLogs.slice(0, 5) // Recent 5 processes
+    });
+    
+  } catch (error) {
+    console.error('History error:', error);
+    res.json({ status: false, message: error.message });
+  }
+});
+
+// REAL-TIME PROCESS MONITORING
+app.post("/api/process-monitor", async (req, res) => {
+  try {
+    const { cookie, process_id } = req.body;
+    
+    if (!cookie || !process_id) {
+      return res.json({ status: false, message: "Missing parameters" });
+    }
+    
+    const userId = getUserId(cookie);
+    const processKey = `process_${process_id}`;
+    const logs = realData.processLogs.get(processKey) || [];
+    const process = realData.activeProcesses.get(process_id);
+    
+    if (!process) {
+      return res.json({ 
+        status: false, 
+        message: "Process not found or completed" 
       });
+    }
+    
+    res.json({
+      status: true,
+      process: {
+        id: process_id,
+        status: process.status,
+        progress: process.progress,
+        current: process.current || 0,
+        total: process.total || 0,
+        startTime: process.startTime,
+        userId: process.userId
+      },
+      logs: logs.slice(-20), // Last 20 logs
+      total_logs: logs.length
+    });
+    
+  } catch (error) {
+    console.error('Monitor error:', error);
+    res.json({ status: false, message: error.message });
+  }
+});
+
+// REAL STATISTICS
+app.post("/api/stats", async (req, res) => {
+  try {
+    const { cookie } = req.body;
+    
+    if (!cookie) {
+      return res.json({ status: false, message: "Cookie required" });
     }
     
     const userId = getUserId(cookie);
     const userKey = `user_${userId}`;
-    const user = userData.limits.get(userKey) || {
+    const user = realData.userLimits.get(userKey) || {
       sharesToday: 0,
       sharesThisHour: 0,
       totalShares: 0,
@@ -567,19 +472,33 @@ app.post("/api/stats", (req, res) => {
       failedShares: 0
     };
     
-    const userHistory = userData.history.get(userId) || [];
-
+    const userHistory = realData.userHistory.get(userId) || [];
+    
+    // Calculate REAL statistics
     let totalTime = 0;
-    let totalShares = 0;
+    let totalSharesProcessed = 0;
     
     userHistory.forEach(entry => {
       totalTime += entry.totalTime || 0;
-      totalShares += entry.limit || 0;
+      totalSharesProcessed += entry.limit || 0;
     });
     
-    const avgTimePerShare = totalShares > 0 ? Math.round(totalTime / totalShares) : 0;
+    const avgTimePerShare = totalSharesProcessed > 0 ? 
+      Math.round(totalTime / totalSharesProcessed) : 0;
+    
     const successRate = user.totalShares > 0 ? 
       Math.round((user.successfulShares / user.totalShares) * 100) : 0;
+    
+    // Get recent activity
+    const recentActivity = userHistory
+      .slice(-5)
+      .reverse()
+      .map(entry => ({
+        date: entry.startedAt,
+        success: entry.success,
+        total: entry.limit,
+        success_rate: entry.limit > 0 ? Math.round((entry.success / entry.limit) * 100) : 0
+      }));
     
     res.json({
       status: true,
@@ -591,138 +510,192 @@ app.post("/api/stats", (req, res) => {
         shares_today: user.sharesToday,
         shares_hour: user.sharesThisHour,
         avg_time_per_share: avgTimePerShare,
-        total_sessions: userHistory.length
+        total_sessions: userHistory.length,
+        total_processing_time: totalTime
       },
       limits: {
-        max_per_request: SHARE_LIMITS.MAX_PER_REQUEST,
-        max_per_hour: SHARE_LIMITS.MAX_PER_HOUR,
-        max_per_day: SHARE_LIMITS.MAX_PER_DAY,
-        remaining_today: SHARE_LIMITS.MAX_PER_DAY - user.sharesToday,
-        remaining_hour: SHARE_LIMITS.MAX_PER_HOUR - user.sharesThisHour
+        max_per_request: 50,
+        max_per_hour: 200,
+        max_per_day: 1000,
+        remaining_today: 1000 - user.sharesToday,
+        remaining_hour: 200 - user.sharesThisHour
+      },
+      recent_activity: recentActivity,
+      overall: {
+        active_processes: Array.from(realData.activeProcesses.values())
+          .filter(p => p.status === 'processing').length,
+        total_users: realData.userLimits.size,
+        total_processes: realData.processLogs.size
       }
     });
     
   } catch (error) {
     console.error('Stats error:', error);
-    res.json({
-      status: false,
-      message: "Error fetching statistics"
-    });
+    res.json({ status: false, message: error.message });
   }
 });
 
-app.post("/api/reset", (req, res) => {
+// REAL-TIME ACTIVE PROCESSES
+app.post("/api/active-processes", async (req, res) => {
   try {
-    const { cookie, admin_key } = req.body;
-
-    if (admin_key !== 'admin123') {
-      return res.json({
-        status: false,
-        message: "Unauthorized"
-      });
+    const { cookie } = req.body;
+    
+    if (!cookie) {
+      return res.json({ status: false, message: "Cookie required" });
     }
     
-    if (cookie) {
-      const userId = getUserId(cookie);
-      const userKey = `user_${userId}`;
-      
-      userData.limits.delete(userKey);
-      userData.history.delete(userId);
-      
-      console.log(`User data reset for: ${userId}`);
-      
-      res.json({
-        status: true,
-        message: "User data reset successfully"
-      });
-    } else {
-      userData.limits.clear();
-      userData.history.clear();
-      
-      console.log("All user data reset");
-      
-      res.json({
-        status: true,
-        message: "All user data reset successfully"
-      });
+    const userId = getUserId(cookie);
+    const activeProcesses = [];
+    
+    for (const [processId, process] of realData.activeProcesses) {
+      if (process.userId === userId && process.status === 'processing') {
+        const processKey = `process_${processId}`;
+        const logs = realData.processLogs.get(processKey) || [];
+        
+        activeProcesses.push({
+          processId: processId,
+          progress: process.progress,
+          current: process.current || 0,
+          total: process.total || 0,
+          startTime: process.startTime,
+          lastLog: logs[logs.length - 1] || null,
+          totalLogs: logs.length
+        });
+      }
     }
+    
+    res.json({
+      status: true,
+      active_processes: activeProcesses,
+      count: activeProcesses.length
+    });
     
   } catch (error) {
-    console.error('Reset error:', error);
+    console.error('Active processes error:', error);
+    res.json({ status: false, message: error.message });
+  }
+});
+
+// CLEAR USER DATA
+app.post("/api/clear-data", async (req, res) => {
+  try {
+    const { cookie, confirm } = req.body;
+    
+    if (!cookie || confirm !== 'DELETE') {
+      return res.json({ 
+        status: false, 
+        message: "Confirmation required. Send confirm: 'DELETE'" 
+      });
+    }
+    
+    const userId = getUserId(cookie);
+    const userKey = `user_${userId}`;
+    
+    // Clear user data
+    realData.userLimits.delete(userKey);
+    realData.userHistory.delete(userId);
+    realData.userStats.delete(userId);
+    
+    // Clear process logs for this user
+    for (const [processId, process] of realData.activeProcesses) {
+      if (process.userId === userId) {
+        realData.activeProcesses.delete(processId);
+        realData.processLogs.delete(`process_${processId}`);
+      }
+    }
+    
+    console.log(`User data cleared for: ${userId}`);
+    
     res.json({
-      status: false,
-      message: "Error resetting data"
+      status: true,
+      message: "All user data cleared successfully"
     });
+    
+  } catch (error) {
+    console.error('Clear data error:', error);
+    res.json({ status: false, message: error.message });
   }
 });
 
-app.get("/api/test", (req, res) => {
-  res.json({
-    status: true,
-    message: "API is working",
-    timestamp: new Date().toISOString(),
-    endpoints: [
-      { method: "POST", path: "/api/share", description: "Share Facebook posts" },
-      { method: "POST", path: "/api/limits", description: "Get user limits" },
-      { method: "POST", path: "/api/history", description: "Get user history" },
-      { method: "POST", path: "/api/stats", description: "Get user statistics" },
-      { method: "GET", path: "/api/health", description: "API health check" }
-    ]
-  });
+// SYSTEM STATUS
+app.get("/api/system-status", async (req, res) => {
+  try {
+    const now = new Date();
+    
+    const status = {
+      status: "online",
+      timestamp: now.toISOString(),
+      server_time: now.toLocaleString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      system: {
+        total_users: realData.userLimits.size,
+        total_processes: realData.processLogs.size,
+        active_processes: Array.from(realData.activeProcesses.values())
+          .filter(p => p.status === 'processing').length,
+        completed_today: Array.from(realData.userHistory.values())
+          .flat()
+          .filter(h => new Date(h.startedAt).toDateString() === now.toDateString())
+          .length
+      },
+      limits: {
+        max_per_request: 50,
+        max_per_hour: 200,
+        max_per_day: 1000,
+        default_delay: 1
+      }
+    };
+    
+    res.json({
+      status: true,
+      data: status
+    });
+    
+  } catch (error) {
+    console.error('System status error:', error);
+    res.json({ status: false, message: error.message });
+  }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
+// 404 handler
 app.use((req, res) => {
-  if (req.accepts('html')) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  } else if (req.accepts('json')) {
-    res.status(404).json({
-      status: false,
-      message: "Endpoint not found"
-    });
-  } else {
-    res.status(404).send("Not found");
-  }
-});
-
-app.use((err, req, res, next) => {
-  console.error('Server error:', err.stack);
-  res.status(500).json({
+  res.status(404).json({
     status: false,
-    message: "Internal server error",
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    message: "Endpoint not found",
+    available_endpoints: [
+      "POST /api/share",
+      "POST /api/process-history", 
+      "POST /api/process-monitor",
+      "POST /api/stats",
+      "POST /api/active-processes",
+      "GET /api/system-status"
+    ]
   });
 });
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log('\n' + '='.repeat(50));
-  console.log('🚀 Facebook Share Master Backend');
+  console.log('🚀 REAL FACEBOOK SHARE TOOL BACKEND');
   console.log('='.repeat(50));
-  console.log(`📡 Server running on port: ${port}`);
-  console.log(`🌐 Access: http://localhost:${port}`);
-  console.log('\n📊 Share Limits Configuration:');
-  console.log(`   ├── Max per request: ${SHARE_LIMITS.MAX_PER_REQUEST}`);
-  console.log(`   ├── Max per hour: ${SHARE_LIMITS.MAX_PER_HOUR}`);
-  console.log(`   ├── Max per day: ${SHARE_LIMITS.MAX_PER_DAY}`);
-  console.log(`   ├── Default delay: ${SHARE_LIMITS.DEFAULT_DELAY}ms`);
-  console.log(`   └── Delay range: ${SHARE_LIMITS.MIN_DELAY}ms - ${SHARE_LIMITS.MAX_DELAY}ms`);
-  console.log('\n🔧 Available Endpoints:');
-  console.log('   ├── GET  /              - Main application');
-  console.log('   ├── POST /api/share     - Share posts');
-  console.log('   ├── POST /api/limits    - Check limits');
-  console.log('   ├── POST /api/history   - Get history');
-  console.log('   ├── POST /api/stats     - Get statistics');
-  console.log('   ├── GET  /api/health    - Health check');
-  console.log('   └── GET  /api/test      - Test endpoint');
+  console.log(`✅ Server running on port: ${port}`);
+  console.log(`✅ REAL processing enabled`);
+  console.log(`✅ No dummy data - all processes are real`);
+  console.log(`✅ Real-time monitoring available`);
+  console.log('='.repeat(50));
+  console.log('\n📊 REAL ENDPOINTS:');
+  console.log('├── POST /api/share            - Real sharing process');
+  console.log('├── POST /api/process-history  - Real process history');
+  console.log('├── POST /api/process-monitor  - Real-time monitoring');
+  console.log('├── POST /api/stats            - Real statistics');
+  console.log('├── POST /api/active-processes - Active processes');
+  console.log('└── GET /api/system-status     - System status');
+  console.log('\n⚠️  WARNING: REAL Facebook API calls are being made!');
+  console.log('⚠️  Use at your own risk!');
   console.log('='.repeat(50) + '\n');
-});
-
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down server...');
-  console.log('📊 Final statistics:');
-  console.log(`   Total users: ${userData.limits.size}`);
-  console.log(`   Total history entries: ${Array.from(userData.history.values()).reduce((sum, arr) => sum + arr.length, 0)}`);
-  process.exit(0);
 });
