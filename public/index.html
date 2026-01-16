@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Share boost | Auto Sharing Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1877f2;
+            --primary-dark: #166fe5;
+            --primary-light: #e7f3ff;
+            --secondary: #42b72a;
+            --secondary-dark: #36a420;
+            --dark: #1c1e21;
+            --light: #ffffff;
+            --gray: #65676b;
+            --gray-light: #f0f2f5;
+            --gray-border: #dddfe2;
+            --danger: #f02849;
+            --success: #42b72a;
+            --warning: #f7b928;
+            --info: #54c7ec;
+            --sidebar-width: 260px;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Header with Glass Effect */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(221, 223, 226, 0.5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            height: 70px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .menu-toggle {
+            background: var(--gray-light);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--gray);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        
+        .menu-toggle:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        /* Sidebar with Glass Effect */
+        .sidebar {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - 70px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(221, 223, 226, 0.5);
+            transform: translateX(-100%);
+            transition: var(--transition);
+            z-index: 999;
+            padding: 25px 0;
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .sidebar-header {
+            padding: 0 25px 20px;
+            border-bottom: 1px solid var(--gray-border);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gray);
+            font-weight: 600;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0 15px;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: var(--transition);
+            font-weight: 500;
+            gap: 15px;
+        }
+        
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .sidebar-menu li a:hover {
+            background: var(--gray-light);
+            transform: translateX(5px);
+        }
+        
+        .sidebar-menu li.active a {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 5px 15px rgba(24, 119, 242, 0.3);
+        }
+        
+        .sidebar-menu li.active a:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            padding: 30px;
+            transition: var(--transition);
+        }
+        
+        .sidebar.active + .main-content {
+            margin-left: var(--sidebar-width);
+        }
+        
+        /* Pages */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Page Header */
+        .page-header {
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-subtitle {
+            color: var(--gray);
+            font-size: 16px;
+            max-width: 600px;
+        }
+        
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: var(--light);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            border: 1px solid var(--gray-border);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stat-success .stat-icon {
+            background: linear-gradient(135deg, rgba(66, 183, 42, 0.1), rgba(66, 183, 42, 0.2));
+            color: var(--success);
+        }
+        
+        .stat-warning .stat-icon {
+            background: linear-gradient(135deg, rgba(247, 185, 40, 0.1), rgba(247, 185, 40, 0.2));
+            color: var(--warning);
+        }
+        
+        .stat-primary .stat-icon {
+            background: linear-gradient(135deg, rgba(24, 119, 242, 0.1), rgba(24, 119, 242, 0.2));
+            color: var(--primary);
+        }
+        
+        .stat-danger .stat-icon {
+            background: linear-gradient(135deg, rgba(240, 40, 73, 0.1), rgba(240, 40, 73, 0.2));
+            color: var(--danger);
+        }
+        
+        .stat-info .stat-icon {
+            background: linear-gradient(135deg, rgba(84, 199, 236, 0.1), rgba(84, 199, 236, 0.2));
+            color: var(--info);
+        }
+        
+        .stat-trend {
+            font-size: 14px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .trend-up {
+            background: rgba(66, 183, 42, 0.1);
+            color: var(--success);
+        }
+        
+        .trend-down {
+            background: rgba(240, 40, 73, 0.1);
+            color: var(--danger);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        /* Forms */
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--light);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--gray-border);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 15px;
+        }
+        
+        .form-label i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid var(--gray-border);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: var(--transition);
+            background: var(--light);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1);
+        }
+        
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(24, 119, 242, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(24, 119, 242, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), var(--secondary-dark));
+            box-shadow: 0 5px 15px rgba(66, 183, 42, 0.3);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 8px 20px rgba(66, 183, 42, 0.4);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        /* Progress */
+        .progress-container {
+            margin: 25px 0;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: var(--gray-light);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.4), 
+                transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Logs */
+        .log-container {
+            background: var(--light);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--gray-border);
+            margin-top: 30px;
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .log-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .log-item {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+            background: rgba(24, 119, 242, 0.03);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .log-item.success {
+            border-left-color: var(--success);
+            background: rgba(66, 183, 42, 0.03);
+        }
+        
+        .log-item.error {
+            border-left-color: var(--danger);
+            background: rgba(240, 40, 73, 0.03);
+        }
+        
+        .log-item.warning {
+            border-left-color: var(--warning);
+            background: rgba(247, 185, 40, 0.03);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .log-time {
+            color: var(--gray);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            min-width: 85px;
+        }
+        
+        .log-message {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        /* Accounts */
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .account-card {
+            background: var(--light);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--gray-border);
+            transition: var(--transition);
+        }
+        
+        .account-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .account-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+        
+        .account-status {
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: rgba(66, 183, 42, 0.1);
+            color: var(--success);
+        }
+        
+        .status-inactive {
+            background: rgba(240, 40, 73, 0.1);
+            color: var(--danger);
+        }
+        
+        .account-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: var(--gray-light);
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Guide */
+        .guide-container {
+            background: var(--light);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--gray-border);
+        }
+        
+        .guide-step {
+            display: flex;
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 2px dashed var(--gray-border);
+        }
+        
+        .guide-step:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-right: 25px;
+            flex-shrink: 0;
+            box-shadow: 0 5px 15px rgba(24, 119, 242, 0.3);
+        }
+        
+        .step-content h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .step-content p {
+            color: var(--gray);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 998;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar.active + .main-content {
+                margin-left: 0;
+            }
+            
+            .overlay.active {
+                display: block;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-container {
+                padding: 25px;
+            }
+            
+            .guide-step {
+                flex-direction: column;
+            }
+            
+            .step-number {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fab fa-facebook"></i>
+            </div>
+            <div class="logo-text">Share Master</div>
+        </div>
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Main Navigation</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active" data-page="dashboard">
+                <a href="#">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li data-page="share">
+                <a href="#">
+                    <i class="fas fa-share-alt"></i>
+                    Share Tool
+                </a>
+            </li>
+            <li data-page="process">
+                <a href="#">
+                    <i class="fas fa-history"></i>
+                    Process History
+                </a>
+            </li>
+            <li data-page="stats">
+                <a href="#">
+                    <i class="fas fa-chart-bar"></i>
+                    Statistics
+                </a>
+            </li>
+            <li data-page="guide">
+                <a href="#">
+                    <i class="fas fa-book"></i>
+                    Guide
+                </a>
+            </li>
+            <li data-page="accounts">
+                <a href="#">
+                    <i class="fas fa-user-plus"></i>
+                    Add Account
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Dashboard -->
+        <div class="page active" id="dashboard">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard Overview
+                </h1>
+                <p class="page-subtitle">Monitor your sharing activities and account status in real-time</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="stat-card stat-success">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-trend trend-up">+12%</div>
+                    </div>
+                    <div class="stat-value" id="successShares">0</div>
+                    <div class="stat-label">Successful Shares</div>
+                </div>
+                
+                <div class="stat-card stat-warning">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-trend trend-down">-5%</div>
+                    </div>
+                    <div class="stat-value" id="pendingShares">0</div>
+                    <div class="stat-label">Pending Shares</div>
+                </div>
+                
+                <div class="stat-card stat-primary">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stat-trend trend-up">+3%</div>
+                    </div>
+                    <div class="stat-value" id="activeAccounts">0</div>
+                    <div class="stat-label">Active Accounts</div>
+                </div>
+                
+                <div class="stat-card stat-danger">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-trend trend-down">-8%</div>
+                    </div>
+                    <div class="stat-value" id="failedShares">0</div>
+                    <div class="stat-label">Failed Shares</div>
+                </div>
+            </div>
+            
+            <div class="log-container">
+                <div class="log-header">
+                    <h3><i class="fas fa-stream"></i> Recent Activity</h3>
+                    <button class="btn" onclick="clearLogs('dashboardLog')">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="log-content" id="dashboardLog">
+                    <!-- Logs will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Share Tool -->
+        <div class="page" id="share">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-share-alt"></i>
+                    Share Tool
+                </h1>
+                <p class="page-subtitle">Automatically share Facebook posts with customizable settings</p>
+            </div>
+            
+            <div class="form-container">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-cookie"></i> Facebook Cookie
+                    </label>
+                    <textarea class="form-input form-textarea" id="cookie" placeholder="Enter your Facebook cookie here... (Get it from browser Developer Tools)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-link"></i> Post Link
+                    </label>
+                    <input type="text" class="form-input" id="postLink" placeholder="https://facebook.com/post/12345">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-hashtag"></i> Share Count
+                        </label>
+                        <input type="number" class="form-input" id="shareLimit" value="10" min="1" max="50" placeholder="Number of shares">
+                        <small style="color: var(--gray); font-size: 13px;">Max: 50 shares per request</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i> Share Delay (ms)
+                        </label>
+                        <input type="number" class="form-input" id="shareDelay" value="1" min="1" max="5000" placeholder="Delay between shares">
+                        <small style="color: var(--gray); font-size: 13px;">Default: 1ms between shares</small>
+                    </div>
+                </div>
+                
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="progress-header">
+                        <span>Sharing Progress</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn btn-success btn-block" id="startShare">
+                        <i class="fas fa-play"></i> Start Sharing
+                    </button>
+                    <button class="btn btn-block" id="stopShare" style="margin-top: 10px; display: none;">
+                        <i class="fas fa-stop"></i> Stop Sharing
+                    </button>
+                </div>
+            </div>
+            
+            <div class="log-container">
+                <div class="log-header">
+                    <h3><i class="fas fa-terminal"></i> Sharing Logs</h3>
+                    <button class="btn" onclick="clearLogs('shareLog')">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="log-content" id="shareLog">
+                    <!-- Share logs will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Process History -->
+        <div class="page" id="process">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-history"></i>
+                    Process History
+                </h1>
+                <p class="page-subtitle">Real-time monitoring of all sharing processes and activities</p>
+            </div>
+            
+            <div class="log-container">
+                <div class="log-header">
+                    <h3><i class="fas fa-clock"></i> Real-time Processing</h3>
+                    <div>
+                        <button class="btn" onclick="clearLogs('processLog')">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                        <button class="btn" onclick="toggleAutoRefresh()" style="margin-left: 10px;">
+                            <i class="fas fa-sync"></i> Auto-refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="log-content" id="processLog">
+                    <!-- Process logs will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="page" id="stats">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Statistics
+                </h1>
+                <p class="page-subtitle">Detailed analytics and performance metrics of your sharing activities</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="stat-card stat-info">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-trend trend-up">+15%</div>
+                    </div>
+                    <div class="stat-value" id="totalShares">0</div>
+                    <div class="stat-label">Total Shares</div>
+                </div>
+                
+                <div class="stat-card stat-success">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-trend trend-up">+5%</div>
+                    </div>
+                    <div class="stat-value" id="successRate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                
+                <div class="stat-card stat-primary">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="stat-trend trend-up">+20%</div>
+                    </div>
+                    <div class="stat-value" id="avgSpeed">0</div>
+                    <div class="stat-label">Avg. Speed (shares/min)</div>
+                </div>
+            </div>
+            
+            <div class="log-container">
+                <div class="log-header">
+                    <h3><i class="fas fa-chart-pie"></i> Performance Summary</h3>
+                </div>
+                <div class="log-content" id="statsLog">
+                    <!-- Statistics logs will appear here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Guide -->
+        <div class="page" id="guide">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-book"></i>
+                    User Guide
+                </h1>
+                <p class="page-subtitle">Learn how to use Facebook Share Master effectively and safely</p>
+            </div>
+            
+            <div class="guide-container">
+                <div class="guide-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Get Your Facebook Cookie</h3>
+                        <p>Log into Facebook in your browser, open Developer Tools (F12), go to Application/Storage tab, find Cookies section, and copy the entire "facebook.com" cookie value.</p>
+                        <p><strong>Important:</strong> Never share your cookie with anyone!</p>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Add Your Account</h3>
+                        <p>Go to "Add Account" page, enter a name for your account and paste your Facebook cookie. Your cookie is stored locally and only visible to you.</p>
+                        <p><strong>Security:</strong> Each user can only see and edit their own accounts.</p>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Configure Share Settings</h3>
+                        <p>In the Share Tool page, select your account, enter the Facebook post link you want to share, set the share count (max 50), and adjust the share delay (default: 1ms).</p>
+                        <p><strong>Tip:</strong> Use 1ms delay for maximum speed, or increase for more safety.</p>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Start Sharing</h3>
+                        <p>Click "Start Sharing" to begin the process. Monitor real-time progress in the Process History page and see detailed statistics in the Statistics page.</p>
+                        <p><strong>Real-time:</strong> All processes are logged in real-time for monitoring.</p>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3>Monitor & Analyze</h3>
+                        <p>Check the Dashboard for overview and Statistics page for detailed analytics. Use the real-time logs to monitor all activities.</p>
+                        <p><strong>Safety:</strong> Built-in limits prevent excessive sharing that could trigger Facebook's security systems.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Account -->
+        <div class="page" id="accounts">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-user-plus"></i>
+                    Account Management
+                </h1>
+                <p class="page-subtitle">Add and manage your Facebook accounts securely</p>
+            </div>
+            
+            <div class="form-container">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user"></i> Account Name
+                    </label>
+                    <input type="text" class="form-input" id="accountName" placeholder="Enter a name for this account">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-cookie-bite"></i> Facebook Cookie
+                    </label>
+                    <textarea class="form-input form-textarea" id="accountCookie" placeholder="Paste your Facebook cookie here... (Private - only you can see this)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn btn-success btn-block" id="saveAccount">
+                        <i class="fas fa-save"></i> Save Account
+                    </button>
+                </div>
+            </div>
+            
+            <div class="page-header" style="margin-top: 40px;">
+                <h3><i class="fas fa-users"></i> Your Accounts</h3>
+            </div>
+            
+            <div class="accounts-grid" id="accountsList">
+                <!-- Accounts will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const mainContent = document.getElementById('mainContent');
+        const menuItems = document.querySelectorAll('.sidebar-menu li');
+        const pages = document.querySelectorAll('.page');
+        
+        // State Management
+        let isSharing = false;
+        let currentProcessId = null;
+        let autoRefreshInterval = null;
+        let shareProcess = null;
+        
+        // Menu Toggle
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+        
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+        
+        // Page Navigation
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove active class from all menu items and pages
+                menuItems.forEach(i => i.classList.remove('active'));
+                pages.forEach(page => page.classList.remove('active'));
+                
+                // Add active class to clicked menu item
+                item.classList.add('active');
+                
+                // Show corresponding page
+                const pageId = item.getAttribute('data-page');
+                document.getElementById(pageId).classList.add('active');
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 1024) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+                
+                // Load page-specific data
+                loadPageData(pageId);
+            });
+        });
+        
+        // Load page data
+        function loadPageData(pageId) {
+            switch(pageId) {
+                case 'dashboard':
+                    updateDashboard();
+                    break;
+                case 'process':
+                    loadProcessHistory();
+                    break;
+                case 'stats':
+                    loadStatistics();
+                    break;
+                case 'accounts':
+                    loadAccounts();
+                    break;
+            }
+        }
+        
+        // Local Storage Management
+        function getLocalStorage(key, defaultValue = []) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
+            } catch (e) {
+                console.error('Error reading from localStorage:', e);
+                return defaultValue;
+            }
+        }
+        
+        function setLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.error('Error writing to localStorage:', e);
+            }
+        }
+        
+        // Log System
+        function addLog(logContainerId, message, type = 'info') {
+            const logContainer = document.getElementById(logContainerId);
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${type}`;
+            logItem.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div class="log-message">${message}</div>
+            `;
+            
+            logContainer.prepend(logItem);
+            
+            // Limit logs to 100 items
+            const logs = logContainer.querySelectorAll('.log-item');
+            if (logs.length > 100) {
+                logContainer.removeChild(logs[logs.length - 1]);
+            }
+            
+            // Scroll to top
+            logContainer.scrollTop = 0;
+            
+            // Also add to process history if not already there
+            if (logContainerId !== 'processLog') {
+                addLog('processLog', message, type);
+            }
+            
+            // Update stats based on log
+            updateStatsFromLog(message, type);
+        }
+        
+        function clearLogs(logContainerId) {
+            if (confirm('Are you sure you want to clear all logs?')) {
+                const logContainer = document.getElementById(logContainerId);
+                logContainer.innerHTML = '';
+                addLog(logContainerId, 'Logs cleared', 'info');
+            }
+        }
+        
+        // Statistics Update
+        function updateStatsFromLog(message, type) {
+            const successShares = document.getElementById('successShares');
+            const failedShares = document.getElementById('failedShares');
+            const totalShares = document.getElementById('totalShares');
+            
+            if (type === 'success' || message.includes('successful') || message.includes('Shared')) {
+                const current = parseInt(successShares.textContent) || 0;
+                successShares.textContent = current + 1;
+                
+                const total = parseInt(totalShares.textContent) || 0;
+                totalShares.textContent = total + 1;
+            } else if (type === 'error' || message.includes('failed') || message.includes('error')) {
+                const current = parseInt(failedShares.textContent) || 0;
+                failedShares.textContent = current + 1;
+                
+                const total = parseInt(totalShares.textContent) || 0;
+                totalShares.textContent = total + 1;
+            }
+            
+            // Update success rate
+            const success = parseInt(successShares.textContent) || 0;
+            const failed = parseInt(failedShares.textContent) || 0;
+            const totalCount = success + failed;
+            
+            if (totalCount > 0) {
+                const successRate = Math.round((success / totalCount) * 100);
+                document.getElementById('successRate').textContent = `${successRate}%`;
+            }
+        }
+        
+        // Account Management
+        function loadAccounts() {
+            const accounts = getLocalStorage('fb_accounts', []);
+            const accountsList = document.getElementById('accountsList');
+            const activeAccounts = document.getElementById('activeAccounts');
+            
+            activeAccounts.textContent = accounts.length;
+            
+            if (accounts.length === 0) {
+                accountsList.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">
+                        <i class="fas fa-user-slash" style="font-size: 48px; margin-bottom: 20px;"></i>
+                        <h3>No accounts added yet</h3>
+                        <p>Add your first Facebook account to start sharing</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            accounts.forEach((account, index) => {
+                html += `
+                    <div class="account-card">
+                        <div class="account-header">
+                            <div>
+                                <div class="account-name">${account.name}</div>
+                                <div class="account-status status-active">Active</div>
+                            </div>
+                            <div class="account-actions">
+                                <button class="action-btn" onclick="useAccount(${index})" title="Use this account">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="action-btn" onclick="deleteAccount(${index})" title="Delete account">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <div style="font-size: 13px; color: var(--gray); margin-bottom: 5px;">Added:</div>
+                            <div style="font-size: 14px;">${new Date(account.added).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            accountsList.innerHTML = html;
+        }
+        
+        function useAccount(index) {
+            const accounts = getLocalStorage('fb_accounts', []);
+            if (accounts[index]) {
+                document.getElementById('cookie').value = accounts[index].cookie;
+                
+                // Switch to share page
+                menuItems.forEach(i => i.classList.remove('active'));
+                pages.forEach(page => page.classList.remove('active'));
+                
+                document.querySelector('[data-page="share"]').classList.add('active');
+                document.getElementById('share').classList.add('active');
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 1024) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+                
+                addLog('shareLog', `Account "${accounts[index].name}" selected for sharing`, 'success');
+            }
+        }
+        
+        function deleteAccount(index) {
+            if (confirm('Are you sure you want to delete this account?')) {
+                const accounts = getLocalStorage('fb_accounts', []);
+                const deletedAccount = accounts.splice(index, 1)[0];
+                setLocalStorage('fb_accounts', accounts);
+                loadAccounts();
+                addLog('dashboardLog', `Account "${deletedAccount.name}" deleted`, 'warning');
+            }
+        }
+        
+        // Save Account
+        document.getElementById('saveAccount').addEventListener('click', () => {
+            const name = document.getElementById('accountName').value.trim();
+            const cookie = document.getElementById('accountCookie').value.trim();
+            
+            if (!name || !cookie) {
+                alert('Please enter both account name and cookie');
+                return;
+            }
+            
+            const accounts = getLocalStorage('fb_accounts', []);
+            accounts.push({
+                name,
+                cookie,
+                added: new Date().toISOString()
+            });
+            
+            setLocalStorage('fb_accounts', accounts);
+            
+            // Clear form
+            document.getElementById('accountName').value = '';
+            document.getElementById('accountCookie').value = '';
+            
+            // Reload accounts list
+            loadAccounts();
+            
+            addLog('dashboardLog', `Account "${name}" added successfully`, 'success');
+            showNotification('Account saved successfully!', 'success');
+        });
+        
+        // Sharing Functionality
+        document.getElementById('startShare').addEventListener('click', async () => {
+            if (isSharing) return;
+            
+            const cookie = document.getElementById('cookie').value.trim();
+            const postLink = document.getElementById('postLink').value.trim();
+            const limit = parseInt(document.getElementById('shareLimit').value);
+            const delay = parseInt(document.getElementById('shareDelay').value);
+            
+            if (!cookie || !postLink || !limit || !delay) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (limit > 50) {
+                showNotification('Maximum share limit is 50 per request', 'error');
+                return;
+            }
+            
+            if (delay < 1) {
+                showNotification('Delay must be at least 1ms', 'error');
+                return;
+            }
+            
+            isSharing = true;
+            document.getElementById('startShare').disabled = true;
+            document.getElementById('stopShare').style.display = 'block';
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            addLog('shareLog', `🚀 Starting share process for: ${postLink}`, 'info');
+            addLog('shareLog', `📊 Target: ${limit} shares | Delay: ${delay}ms`, 'info');
+            
+            let successCount = 0;
+            let failedCount = 0;
+            
+            // Simulate sharing process (replace with actual API call)
+            for (let i = 1; i <= limit && isSharing; i++) {
+                // Update progress
+                const progress = Math.round((i / limit) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+                
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, delay));
+                
+                // Simulate success/failure (85% success rate)
+                const success = Math.random() > 0.15;
+                
+                if (success) {
+                    successCount++;
+                    addLog('shareLog', `✅ Share ${i}/${limit} successful`, 'success');
+                } else {
+                    failedCount++;
+                    addLog('shareLog', `❌ Share ${i}/${limit} failed`, 'error');
+                }
+                
+                // Update real-time stats
+                document.getElementById('successShares').textContent = 
+                    parseInt(document.getElementById('successShares').textContent) + (success ? 1 : 0);
+                document.getElementById('failedShares').textContent = 
+                    parseInt(document.getElementById('failedShares').textContent) + (success ? 0 : 1);
+                document.getElementById('pendingShares').textContent = limit - i;
+            }
+            
+            if (isSharing) {
+                addLog('shareLog', `🎉 Sharing completed: ${successCount} successful, ${failedCount} failed`, 'success');
+                showNotification(`Sharing completed: ${successCount} successful, ${failedCount} failed`, 'success');
+                
+                // Save to history
+                const history = getLocalStorage('share_history', []);
+                history.push({
+                    postLink,
+                    limit,
+                    delay,
+                    success: successCount,
+                    failed: failedCount,
+                    date: new Date().toISOString()
+                });
+                setLocalStorage('share_history', history);
+            } else {
+                addLog('shareLog', '⏹️ Sharing process stopped by user', 'warning');
+            }
+            
+            // Reset UI
+            isSharing = false;
+            document.getElementById('startShare').disabled = false;
+            document.getElementById('stopShare').style.display = 'none';
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+        });
+        
+        // Stop Sharing
+        document.getElementById('stopShare').addEventListener('click', () => {
+            isSharing = false;
+            document.getElementById('stopShare').style.display = 'none';
+            document.getElementById('startShare').disabled = false;
+        });
+        
+        // Dashboard Update
+        function updateDashboard() {
+            const accounts = getLocalStorage('fb_accounts', []);
+            const history = getLocalStorage('share_history', []);
+            
+            let totalSuccess = 0;
+            let totalFailed = 0;
+            
+            history.forEach(item => {
+                totalSuccess += item.success;
+                totalFailed += item.failed;
+            });
+            
+            document.getElementById('activeAccounts').textContent = accounts.length;
+            document.getElementById('successShares').textContent = totalSuccess;
+            document.getElementById('failedShares').textContent = totalFailed;
+            document.getElementById('totalShares').textContent = totalSuccess + totalFailed;
+            
+            // Calculate success rate
+            if (totalSuccess + totalFailed > 0) {
+                const successRate = Math.round((totalSuccess / (totalSuccess + totalFailed)) * 100);
+                document.getElementById('successRate').textContent = `${successRate}%`;
+            }
+            
+            // Load recent logs
+            const dashboardLog = document.getElementById('dashboardLog');
+            
+            // Add sample logs if empty
+            if (dashboardLog.children.length === 0) {
+                addLog('dashboardLog', 'Welcome to Facebook Share Master!', 'info');
+                addLog('dashboardLog', 'Add your Facebook account to start sharing', 'info');
+                if (history.length > 0) {
+                    const recent = history[history.length - 1];
+                    addLog('dashboardLog', `Last session: ${recent.success} successful, ${recent.failed} failed shares`, 'success');
+                }
+            }
+        }
+        
+        // Process History
+        function loadProcessHistory() {
+            const history = getLocalStorage('share_history', []);
+            const processLog = document.getElementById('processLog');
+            
+            if (history.length > 0 && processLog.children.length < 3) {
+                history.slice(-5).reverse().forEach(item => {
+                    addLog('processLog', `📅 ${new Date(item.date).toLocaleString()}: ${item.success} successful, ${item.failed} failed`, 'info');
+                });
+            }
+        }
+        
+        // Statistics
+        function loadStatistics() {
+            const history = getLocalStorage('share_history', []);
+            const statsLog = document.getElementById('statsLog');
+            
+            let totalShares = 0;
+            let totalSuccess = 0;
+            let totalTime = 0;
+            
+            history.forEach(item => {
+                totalShares += item.success + item.failed;
+                totalSuccess += item.success;
+                totalTime += item.limit * item.delay;
+            });
+            
+            // Calculate average speed (shares per minute)
+            let avgSpeed = 0;
+            if (totalTime > 0) {
+                const totalMinutes = totalTime / 60000;
+                avgSpeed = Math.round(totalShares / totalMinutes);
+            }
+            
+            document.getElementById('avgSpeed').textContent = avgSpeed;
+            document.getElementById('totalShares').textContent = totalShares;
+            
+            // Clear and add stats summary
+            statsLog.innerHTML = '';
+            
+            if (history.length > 0) {
+                addLog('statsLog', `📈 Total Shares: ${totalShares}`, 'info');
+                addLog('statsLog', `✅ Success Rate: ${totalShares > 0 ? Math.round((totalSuccess / totalShares) * 100) : 0}%`, 'success');
+                addLog('statsLog', `⚡ Average Speed: ${avgSpeed} shares/minute`, 'info');
+                addLog('statsLog', `📊 Sessions Completed: ${history.length}`, 'info');
+            } else {
+                addLog('statsLog', 'No statistics available yet. Start sharing to see analytics.', 'info');
+            }
+        }
+        
+        // Auto-refresh for Process History
+        function toggleAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                showNotification('Auto-refresh stopped', 'info');
+            } else {
+                autoRefreshInterval = setInterval(() => {
+                    loadProcessHistory();
+                }, 5000); // Refresh every 5 seconds
+                showNotification('Auto-refresh enabled (5s interval)', 'success');
+            }
+        }
+        
+        // Notification System
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? 'var(--success)' : 
+                           type === 'error' ? 'var(--danger)' : 'var(--primary)'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                max-width: 400px;
+            `;
+            
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                               type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Add CSS for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize the application
+        function init() {
+            updateDashboard();
+            loadAccounts();
+            
+            // Add welcome log
+            addLog('dashboardLog', 'System initialized and ready', 'success');
+            addLog('processLog', 'Real-time process monitoring started', 'info');
+            
+            // Set default share delay to 1ms
+            document.getElementById('shareDelay').value = 1;
+        }
+        
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
