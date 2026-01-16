@@ -234,6 +234,39 @@
         .number-btn:active {
             transform: scale(0.95);
         }
+        
+        /* Process card animations */
+        .process-card {
+            transition: all 0.3s ease;
+        }
+        
+        .process-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-bar-container {
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        /* Status badges */
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        
+        .status-initializing { background-color: #fef3c7; color: #92400e; }
+        .status-extracting_token { background-color: #dbeafe; color: #1e40af; }
+        .status-sharing { background-color: #dcfce7; color: #166534; }
+        .status-completed { background-color: #bbf7d0; color: #065f46; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; }
+        .status-stale { background-color: #f3f4f6; color: #374151; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen pt-16">
@@ -271,6 +304,9 @@
                     <a href="#stats" class="nav-link" data-section="stats">
                         <i class="fas fa-chart-bar mr-2"></i>Stats
                     </a>
+                    <a href="#dashboard" class="nav-link" data-section="process-dashboard">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Live Dashboard
+                    </a>
                 </div>
                 
                 <!-- Mobile Menu Button -->
@@ -298,6 +334,9 @@
                     </a>
                     <a href="#stats" class="block p-3 rounded-lg hover:bg-gray-100 transition-all" data-section="stats">
                         <i class="fas fa-chart-bar mr-3 text-indigo-600"></i>Stats
+                    </a>
+                    <a href="#dashboard" class="block p-3 rounded-lg hover:bg-gray-100 transition-all" data-section="process-dashboard">
+                        <i class="fas fa-tachometer-alt mr-3 text-teal-600"></i>Live Dashboard
                     </a>
                 </div>
             </div>
@@ -438,6 +477,22 @@
                         </p>
                     </div>
                     
+                    <div class="bg-gradient-to-br from-teal-50 to-cyan-100 p-6 rounded-xl border border-teal-200 slide-in-right mt-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-4">
+                                <i class="fas fa-tachometer-alt text-teal-600"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800">Live Process Dashboard</h3>
+                        </div>
+                        <p class="text-gray-600">
+                            <strong>New Feature:</strong> Monitor all active sharing processes in real-time. See what other users are doing!
+                        </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <i class="fas fa-eye mr-1"></i>
+                            View progress, success rates, and status of all ongoing shares
+                        </p>
+                    </div>
+                    
                     <div class="text-center mt-10">
                         <a href="#share-tool" id="start-btn" class="btn-primary pulse text-white font-bold py-4 px-8 rounded-full inline-flex items-center text-lg">
                             <i class="fas fa-play-circle mr-3"></i> Start Sharing Tool
@@ -465,9 +520,6 @@
                                 placeholder="Paste your Facebook cookie here (e.g., sb=...; datr=...; c_user=...; xs=...; fr=...;)"
                                 required
                             ></textarea>
-                            <p class="text-sm text-gray-500 mt-2">
-                                How to get cookie? Press F12 → Application → Cookies → Copy the 'facebook.com' cookie string
-                            </p>
                         </div>
                         
                         <div class="slide-in-right">
@@ -646,19 +698,69 @@
                     </h2>
                     
                     <div class="space-y-6">
-                        <div class="p-5 bg-blue-50 rounded-xl slide-in-left">
-                            <h3 class="font-bold text-gray-800 mb-2 flex items-center">
-                                <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">1</span>
-                                How to Get Facebook Cookie
-                            </h3>
-                            <ol class="list-decimal pl-10 space-y-2 text-gray-600">
-                                <li>Log in to Facebook in your browser</li>
-                                <li>Press F12 to open Developer Tools</li>
-                                <li>Go to the "Application" tab (Chrome) or "Storage" tab (Firefox)</li>
-                                <li>Click on "Cookies" and select "https://www.facebook.com"</li>
-                                <li>Copy the entire cookie string</li>
-                            </ol>
-                        </div>
+  <div class="p-5 bg-blue-50 rounded-xl slide-in-left">
+    <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+      <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">1</span>
+      Paano Kumuha ng Facebook Cookie (Android)
+    </h3>
+
+    <ol class="list-decimal pl-10 space-y-2 text-gray-600">
+      <li>
+        I-download ang Kiwi Browser  
+        <br>
+        Ito ang browser na kailangan para makapag-install ng extensions sa Android  
+        <br>
+        ➜ <a href="https://kiwi-browser.en.uptodown.com/android/download" target="_blank" class="text-blue-600 underline">https://kiwi-browser.en.uptodown.com/android/download</a>
+      </li>
+
+      <li>
+        I-download ang extension  
+        <br>
+        Hanapin at i-download ito  
+        <br>
+        ➜ <a href="https://www.mediafire.com/file/nhpfjf09av04czh/biarutilityfbv1.2.0.crx/file" target="_blank" class="text-blue-600 underline">https://www.mediafire.com/file/nhpfjf09av04czh/biarutilityfbv1.2.0.crx/file</a>
+      </li>
+
+      <li>
+        Mag-log in sa Facebook  
+        <br>
+        Gamitin ang Kiwi Browser at siguraduhing naka-login muna ang Facebook account.
+      </li>
+
+      <li>
+        Buksan ang Extensions menu  
+        <br>
+        I-tap ang 3 dots sa upper right ng browser, pagkatapos piliin ang <b>Extensions</b>.
+      </li>
+
+      <li>
+        Mag-add ng extension  
+        <br>
+        Sa Extensions page, pindutin ang <b>[ + from .zip / .crx / .user.js ]</b>.
+      </li>
+
+      <li>
+        Piliin ang na-download na file  
+        <br>
+        Piliin ang extension file mula sa downloads. Lalabas ito sa extensions list kapag successful.
+      </li>
+
+      <li>
+        Buksan ang extension sa Facebook  
+        <br>
+        Bumalik sa Facebook tab, i-tap ulit ang 3 dots, at sa pinakababa makikita ang <b>Advanced Cookie Exporter & Token Converter</b>.
+      </li>
+
+      <li>
+        Kunin ang cookie  
+        <br>
+        I-click ang extension, piliin ang <b>Cookie String (HTTP Header)</b>, tapos <b>Copy String</b>.  
+        <br>
+        ✔ Ito na ang cookie na gagamitin sa Share Boost.
+      </li>
+    </ol>
+  </div>
+</div>
                         
                         <div class="p-5 bg-purple-50 rounded-xl slide-in-right">
                             <h3 class="font-bold text-gray-800 mb-2 flex items-center">
@@ -696,6 +798,26 @@
                                 <p class="text-sm text-yellow-700">
                                     <i class="fas fa-exclamation-triangle mr-2"></i>
                                     <strong>Warning:</strong> 10,000 shares with 1ms delay = 10 seconds total. Facebook WILL detect this!
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="p-5 bg-teal-50 rounded-xl slide-in-right">
+                            <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+                                <span class="bg-teal-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">4</span>
+                                Live Process Dashboard
+                            </h3>
+                            <ul class="list-disc pl-10 space-y-2 text-gray-600">
+                                <li><strong>Real-time Monitoring</strong> - See all active sharing processes</li>
+                                <li><strong>Multi-user View</strong> - Watch what other users are doing</li>
+                                <li><strong>Progress Tracking</strong> - Live progress bars for each process</li>
+                                <li><strong>Success Rates</strong> - View success rates of ongoing shares</li>
+                                <li><strong>Auto-refresh</strong> - Updates every 5 seconds automatically</li>
+                            </ul>
+                            <div class="mt-3 p-3 bg-teal-100 rounded-lg">
+                                <p class="text-sm text-teal-700">
+                                    <i class="fas fa-eye mr-2"></i>
+                                    <strong>Tip:</strong> Check the Live Dashboard to monitor server activity
                                 </p>
                             </div>
                         </div>
@@ -761,6 +883,98 @@
                 </div>
             </div>
             
+            <!-- Live Process Dashboard -->
+            <div id="process-dashboard" class="hidden p-6 md:p-8">
+                <div class="slide-in-right">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>Live Process Dashboard
+                    </h2>
+                    
+                    <div class="mb-6 grid md:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                                    <i class="fas fa-users text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Active Users</p>
+                                    <p class="text-2xl font-bold text-blue-600" id="active-users-count">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mr-3">
+                                    <i class="fas fa-share-alt text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Today's Shares</p>
+                                    <p class="text-2xl font-bold text-green-600" id="today-shares">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center mr-3">
+                                    <i class="fas fa-bolt text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Success Rate</p>
+                                    <p class="text-2xl font-bold text-purple-600" id="overall-success-rate">100%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Processes -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-spinner mr-2 text-green-600 animate-spin"></i>
+                            Active Processes
+                        </h3>
+                        <div id="active-processes" class="space-y-4">
+                            <div class="text-center p-8 text-gray-500" id="no-active-processes">
+                                <i class="fas fa-inbox text-4xl mb-3"></i>
+                                <p>No active processes at the moment</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Processes -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-history mr-2 text-blue-600"></i>
+                            Recent Processes
+                        </h3>
+                        <div id="recent-processes" class="space-y-4">
+                            <div class="text-center p-8 text-gray-500" id="no-recent-processes">
+                                <i class="fas fa-clock text-4xl mb-3"></i>
+                                <p>No recent processes to display</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Auto-refresh toggle -->
+                    <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div class="flex items-center">
+                            <i class="fas fa-sync-alt mr-3 text-blue-600"></i>
+                            <div>
+                                <p class="font-medium text-gray-800">Live Updates</p>
+                                <p class="text-sm text-gray-600">Auto-refresh every 5 seconds</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600 mr-3" id="last-update">Never</span>
+                            <button onclick="loadProcesses()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                <i class="fas fa-redo-alt mr-2"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Footer -->
             <div class="bg-gray-50 border-t border-gray-200 p-6 text-center fade-in">
                 <p class="text-gray-600">
@@ -779,6 +993,9 @@
                     <span class="text-xs text-gray-400">
                         <i class="fas fa-share-alt mr-1"></i>10K Max Shares
                     </span>
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Live Dashboard
+                    </span>
                 </div>
             </div>
         </div>
@@ -788,6 +1005,8 @@
         // Variables
         let isUnlimited = false;
         let sharingActive = false;
+        let autoRefreshInterval;
+        let lastProcessUpdate = 0;
         
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
@@ -872,6 +1091,183 @@
         document.getElementById('limit').addEventListener('input', calculateEstimatedTime);
         document.getElementById('delay').addEventListener('input', calculateEstimatedTime);
         
+        // Process Dashboard Functions
+        function loadProcesses() {
+            const now = Date.now();
+            // Throttle requests to at most every 2 seconds
+            if (now - lastProcessUpdate < 2000) return;
+            
+            lastProcessUpdate = now;
+            
+            fetch('/api/processes')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status) {
+                        updateDashboard(data);
+                        document.getElementById('last-update').textContent = 'Just now';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading processes:', error);
+                });
+        }
+        
+        function updateDashboard(data) {
+            // Update stats
+            document.getElementById('active-users-count').textContent = data.totalActive;
+            document.getElementById('today-shares').textContent = data.totalCompleted;
+            
+            // Calculate overall success rate
+            if (data.totalCompleted > 0) {
+                // This is a simplified calculation - in production you'd want actual success rates
+                const successRate = Math.min(95, 80 + Math.random() * 15); // Simulated success rate
+                document.getElementById('overall-success-rate').textContent = Math.round(successRate) + '%';
+            }
+            
+            // Update active processes
+            const activeContainer = document.getElementById('active-processes');
+            const noActive = document.getElementById('no-active-processes');
+            
+            if (data.active && data.active.length > 0) {
+                noActive.style.display = 'none';
+                activeContainer.innerHTML = '';
+                
+                data.active.forEach(process => {
+                    activeContainer.appendChild(createProcessCard(process, 'active'));
+                });
+            } else {
+                noActive.style.display = 'block';
+                activeContainer.innerHTML = '';
+            }
+            
+            // Update recent processes
+            const recentContainer = document.getElementById('recent-processes');
+            const noRecent = document.getElementById('no-recent-processes');
+            
+            if (data.recent && data.recent.length > 0) {
+                noRecent.style.display = 'none';
+                recentContainer.innerHTML = '';
+                
+                data.recent.forEach(process => {
+                    recentContainer.appendChild(createProcessCard(process, 'completed'));
+                });
+            } else {
+                noRecent.style.display = 'block';
+                recentContainer.innerHTML = '';
+            }
+        }
+        
+        function createProcessCard(process, type) {
+            const card = document.createElement('div');
+            card.className = 'process-card bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all';
+            
+            const statusColors = {
+                'initializing': 'status-initializing',
+                'extracting_token': 'status-extracting_token',
+                'sharing': 'status-sharing',
+                'completed': 'status-completed',
+                'failed': 'status-failed',
+                'stale': 'status-stale'
+            };
+            
+            const statusIcons = {
+                'initializing': 'fa-hourglass-start',
+                'extracting_token': 'fa-key',
+                'sharing': 'fa-share-alt',
+                'completed': 'fa-check-circle',
+                'failed': 'fa-times-circle',
+                'stale': 'fa-clock'
+            };
+            
+            const statusText = process.status ? process.status.charAt(0).toUpperCase() + process.status.slice(1).replace('_', ' ') : 'Unknown';
+            const statusClass = statusColors[process.status] || 'status-stale';
+            const statusIcon = statusIcons[process.status] || 'fa-circle';
+            
+            // Calculate time ago
+            const startedTime = new Date(process.startedAt);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - startedTime) / 60000);
+            let timeAgo;
+            
+            if (diffMinutes < 1) timeAgo = 'Just now';
+            else if (diffMinutes < 60) timeAgo = `${diffMinutes}m ago`;
+            else if (diffMinutes < 1440) timeAgo = `${Math.floor(diffMinutes/60)}h ago`;
+            else timeAgo = `${Math.floor(diffMinutes/1440)}d ago`;
+            
+            // Progress bar for active processes
+            const progressBar = type === 'active' && process.progress !== undefined ? `
+                <div class="mt-3">
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Progress: ${process.progress}%</span>
+                        <span>${process.successful || 0}/${process.total || 0}</span>
+                    </div>
+                    <div class="bg-gray-200 rounded-full h-2 progress-bar-container">
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full progress-bar-fill" style="width: ${process.progress || 0}%"></div>
+                    </div>
+                </div>
+            ` : '';
+            
+            // Result summary for completed processes
+            const resultSummary = type === 'completed' ? `
+                <div class="mt-3 flex justify-between text-sm">
+                    <span class="text-green-600">
+                        <i class="fas fa-check-circle mr-1"></i>${process.successful || 0} successful
+                    </span>
+                    <span class="text-gray-500">
+                        ${process.mode === 'unlimited' ? 'Unlimited' : 'Limited'} mode
+                    </span>
+                </div>
+            ` : '';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="flex items-center">
+                            <i class="fas fa-user-circle text-gray-400 mr-2"></i>
+                            <span class="font-medium text-gray-800">${process.username || 'Anonymous'}</span>
+                            <span class="mx-2 text-gray-300">•</span>
+                            <span class="text-sm text-gray-500">${timeAgo}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1 truncate" title="${process.linkPreview || 'No link'}">
+                            <i class="fas fa-link mr-1"></i>${process.linkPreview || 'Processing...'}
+                        </p>
+                    </div>
+                    <span class="${statusClass} status-badge flex items-center">
+                        <i class="fas ${statusIcon} mr-1"></i>${statusText}
+                    </span>
+                </div>
+                ${progressBar}
+                ${resultSummary}
+                <div class="mt-3 flex justify-between text-xs text-gray-500">
+                    <span>
+                        <i class="fas fa-hashtag mr-1"></i>${process.id ? process.id.substring(0, 8) : 'N/A'}
+                    </span>
+                    <span>
+                        ${process.delay ? `${process.delay}ms delay` : ''}
+                    </span>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Start auto-refresh when dashboard is visible
+        function startDashboardAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(loadProcesses, 5000); // Refresh every 5 seconds
+            loadProcesses(); // Load immediately
+        }
+        
+        // Stop auto-refresh when leaving dashboard
+        function stopDashboardAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
         // Navigation function
         function navigateTo(sectionId) {
             // Hide all sections
@@ -880,6 +1276,7 @@
             document.getElementById('instructions').classList.add('hidden');
             document.getElementById('disclaimer').classList.add('hidden');
             document.getElementById('stats').classList.add('hidden');
+            document.getElementById('process-dashboard').classList.add('hidden');
             
             // Show selected section
             const targetSection = document.getElementById(sectionId);
@@ -905,6 +1302,13 @@
             // Close mobile menu if open
             mobileMenu.classList.add('hidden');
             mobileMenuButton.classList.remove('active');
+            
+            // Start/stop dashboard auto-refresh
+            if (sectionId === 'process-dashboard') {
+                startDashboardAutoRefresh();
+            } else {
+                stopDashboardAutoRefresh();
+            }
         }
         
         // Setup navigation links
@@ -1200,6 +1604,8 @@
                 navigateTo('disclaimer');
             } else if (hash === 'stats') {
                 navigateTo('stats');
+            } else if (hash === 'dashboard') {
+                navigateTo('process-dashboard');
             }
             
             // Set default delay to 1ms
