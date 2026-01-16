@@ -1524,3 +1524,45 @@ button:disabled,
     cursor: not-allowed;
     transform: none !important;
 }
+
+#guide-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.page-header {
+    flex-shrink: 0; 
+}
+
+.guide-steps {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 80px;
+}
+
+.guide-page .page-header + div {
+    max-height: calc(100vh - 200px); 
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 5px;
+}
+
+.page {
+    position: relative;
+    height: 100%;
+    overflow: hidden; 
+}
+
+.guide-content-wrapper {
+    position: absolute;
+    top: 70px; 
+    bottom: 70px; 
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 15px;
+}
