@@ -16,6 +16,11 @@ const ua_list = [
   "Mozilla/5.0 (Linux; Android 11; G91 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/106.0.5249.126 Mobile Safari/537.36[FBAN/EMA;FBLC/fr_FR;FBAV/325.0.1.4.108;]"
 ];
 
+// In-memory storage for active processes (in production use Redis or database)
+const activeProcesses = new Map();
+const completedProcesses = [];
+const MAX_COMPLETED_PROCESSES = 50; // Keep last 50 processes
+
 function extract_token(cookie, ua) {
   try {
     return axios.get("https://business.facebook.com/business_locations", {
@@ -37,6 +42,18 @@ function extract_token(cookie, ua) {
   }
 }
 
+// Generate unique ID for each process
+function generateProcessId() {
+  return 'proc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Clean up old processes
+function cleanupOldProcesses() {
+  if (completedProcesses.length > MAX_COMPLETED_PROCESSES) {
+    completedProcesses.splice(0, completedProcesses.length - MAX_COMPLETED_PROCESSES);
+  }
+}
+
 // Serve the single HTML file for all routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -44,6 +61,49 @@ app.get('/', (req, res) => {
 
 app.get('/share', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// New endpoint: Get all active processes
+app.get('/api/processes', (req, res) => {
+  const processes = Array.from(activeProcesses.values()).map(proc => ({
+    id: proc.id,
+    username: proc.username || 'Anonymous',
+    status: proc.status,
+    progress: proc.progress,
+    total: proc.total,
+    successful: proc.successful,
+    startedAt: proc.startedAt,
+    estimatedTime: proc.estimatedTime,
+    mode: proc.mode,
+    linkPreview: proc.linkPreview
+  }));
+  
+  const recentCompleted = completedProcesses.slice(-10).reverse(); // Show last 10 completed
+  
+  res.json({
+    status: true,
+    active: processes,
+    recent: recentCompleted,
+    totalActive: processes.length,
+    totalCompleted: completedProcesses.length,
+    serverTime: new Date().toISOString()
+  });
+});
+
+// New endpoint: Get process details
+app.get('/api/process/:id', (req, res) => {
+  const processId = req.params.id;
+  const process = activeProcesses.get(processId) || 
+                  completedProcesses.find(p => p.id === processId);
+  
+  if (!process) {
+    return res.json({ status: false, message: "Process not found" });
+  }
+  
+  res.json({
+    status: true,
+    process: process
+  });
 });
 
 app.post("/api/share", async (req, res) => {
@@ -67,11 +127,9 @@ app.post("/api/share", async (req, res) => {
   let limitNum;
   
   if (isUnlimited) {
-    // Unlimited mode - use 10000 as max for safety
-    limitNum = 10000;
+    limitNum = 10000; // Max 10,000 even for unlimited
     console.log('♾️ Unlimited mode - Max 10,000 shares');
   } else {
-    // Limited mode - validate 100-10000
     limitNum = parseInt(limit, 10);
     
     if (isNaN(limitNum)) {
@@ -79,7 +137,6 @@ app.post("/api/share", async (req, res) => {
       return res.json({ status: false, message: "Please enter a valid number of shares." });
     }
     
-    // FRONTEND SYNC: 100-10000 shares validation
     if (limitNum < 100) {
       console.log('❌ Below minimum:', limitNum);
       return res.json({ 
@@ -99,32 +156,108 @@ app.post("/api/share", async (req, res) => {
     console.log(`✅ Valid share count: ${limitNum}`);
   }
 
+  // Extract username from cookie for display
+  let username = 'Anonymous';
+  try {
+    const userMatch = cookie.match(/c_user=(\d+)/);
+    if (userMatch) {
+      username = 'User_' + userMatch[1].substring(0, 6);
+    }
+  } catch (e) {
+    // If can't extract username, keep as Anonymous
+  }
+
+  // Create process record
+  const processId = generateProcessId();
+  const processData = {
+    id: processId,
+    username: username,
+    status: 'initializing',
+    progress: 0,
+    total: limitNum,
+    successful: 0,
+    failed: 0,
+    startedAt: new Date().toISOString(),
+    estimatedTime: Math.round((limitNum * delayMs) / 1000),
+    mode: isUnlimited ? 'unlimited' : 'limited',
+    linkPreview: post_link.substring(0, 50) + (post_link.length > 50 ? '...' : ''),
+    fullLink: post_link,
+    delay: delayMs,
+    logs: []
+  };
+
+  // Add initial log
+  processData.logs.push({
+    time: new Date().toISOString(),
+    message: `Process started: ${limitNum} shares with ${delayMs}ms delay`,
+    type: 'info'
+  });
+
+  // Store process
+  activeProcesses.set(processId, processData);
+
+  // Update status
+  processData.status = 'extracting_token';
+  processData.logs.push({
+    time: new Date().toISOString(),
+    message: 'Extracting Facebook access token...',
+    type: 'info'
+  });
+
+  // Extract token
   const ua = ua_list[Math.floor(Math.random() * ua_list.length)];
   const token = await extract_token(cookie, ua);
   
   if (!token) {
+    processData.status = 'failed';
+    processData.logs.push({
+      time: new Date().toISOString(),
+      message: 'Token extraction failed',
+      type: 'error'
+    });
+    
+    // Move to completed
+    activeProcesses.delete(processId);
+    completedProcesses.push(processData);
+    cleanupOldProcesses();
+    
     console.log('❌ Token extraction failed');
     return res.json({ status: false, message: "Token extraction failed. Please check your cookie." });
   }
+
+  processData.status = 'sharing';
+  processData.logs.push({
+    time: new Date().toISOString(),
+    message: 'Token extracted successfully. Starting sharing process...',
+    type: 'success'
+  });
 
   console.log('✅ Token extracted successfully');
   console.log(`🔄 Starting ${isUnlimited ? 'unlimited (max 10k)' : limitNum} shares with ${delayMs}ms delay`);
 
   let success = 0;
   let errors = 0;
-  const maxErrors = 3; // Stop after 3 consecutive errors
+  const maxErrors = 3;
   
-  // For progress logging
-  const logInterval = Math.max(1, Math.floor(limitNum / 10)); // Log every 10%
-  
+  // Start sharing process
   for (let i = 0; i < limitNum; i++) {
+    // Update process progress
+    processData.progress = Math.round((i / limitNum) * 100);
+    processData.successful = success;
+    processData.failed = errors;
+    
+    // Update every 5% or every 100 shares, whichever is smaller
+    const updateInterval = Math.max(1, Math.min(Math.floor(limitNum / 20), 100));
+    
+    if (i % updateInterval === 0 || i === limitNum - 1) {
+      processData.logs.push({
+        time: new Date().toISOString(),
+        message: `Progress: ${processData.progress}% (${i}/${limitNum}) - ${success} successful, ${errors} failed`,
+        type: 'progress'
+      });
+    }
+    
     try {
-      // Log progress
-      if (i % logInterval === 0 || i === limitNum - 1) {
-        const progress = Math.round((i / limitNum) * 100);
-        console.log(`📊 Progress: ${progress}% (${i}/${limitNum}) - ${success} successful`);
-      }
-      
       const response = await axios.post(
         "https://graph.facebook.com/v18.0/me/feed",
         null,
@@ -143,30 +276,62 @@ app.post("/api/share", async (req, res) => {
       
       if (response.data.id) {
         success++;
-        errors = 0; // Reset error counter
+        errors = 0;
         
-        // Add delay between shares if not the last one
+        // Update process
+        processData.successful = success;
+        
+        // Add delay between shares
         if (i < limitNum - 1 && delayMs > 0) {
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       } else {
         console.log('❌ No ID returned from Facebook');
         errors++;
+        processData.failed = errors;
+        processData.logs.push({
+          time: new Date().toISOString(),
+          message: `Share ${i + 1} failed: No ID returned`,
+          type: 'warning'
+        });
+        
         if (errors >= maxErrors) {
-          console.log(`🛑 Stopping due to ${maxErrors} consecutive errors`);
+          processData.logs.push({
+            time: new Date().toISOString(),
+            message: `Stopping due to ${maxErrors} consecutive errors`,
+            type: 'error'
+          });
           break;
         }
       }
     } catch (err) {
       console.error('❌ Share error:', err.message);
       errors++;
+      processData.failed = errors;
+      
+      processData.logs.push({
+        time: new Date().toISOString(),
+        message: `Share ${i + 1} error: ${err.message}`,
+        type: 'error'
+      });
       
       // Enhanced error handling
       if (err.response) {
         const errorData = err.response.data;
         
-        // Token expired (190)
         if (errorData.error && errorData.error.code === 190) {
+          processData.status = 'failed';
+          processData.logs.push({
+            time: new Date().toISOString(),
+            message: 'Access token expired',
+            type: 'error'
+          });
+          
+          // Move to completed
+          activeProcesses.delete(processId);
+          completedProcesses.push(processData);
+          cleanupOldProcesses();
+          
           return res.json({ 
             status: false, 
             message: "Access token expired. Please refresh your cookie.", 
@@ -174,32 +339,33 @@ app.post("/api/share", async (req, res) => {
           });
         }
         
-        // Rate limiting (429 or 4)
         if (err.response.status === 429 || (errorData.error && errorData.error.code === 4)) {
+          processData.status = 'failed';
+          processData.logs.push({
+            time: new Date().toISOString(),
+            message: 'Rate limited by Facebook',
+            type: 'error'
+          });
+          
+          // Move to completed
+          activeProcesses.delete(processId);
+          completedProcesses.push(processData);
+          cleanupOldProcesses();
+          
           return res.json({ 
             status: false, 
             message: "Rate limited by Facebook. Please try again later.", 
             success_count: success 
           });
         }
-        
-        // Permission error (10)
-        if (errorData.error && errorData.error.code === 10) {
-          return res.json({ 
-            status: false, 
-            message: "Permission denied. Your cookie may not have sharing permissions.", 
-            success_count: success 
-          });
-        }
-        
-        // Show Facebook error message if available
-        if (errorData.error && errorData.error.message) {
-          console.error('Facebook Error:', errorData.error.message);
-        }
       }
       
       if (errors >= maxErrors) {
-        console.log(`🛑 Stopping due to ${maxErrors} consecutive errors`);
+        processData.logs.push({
+          time: new Date().toISOString(),
+          message: `Stopping due to ${maxErrors} consecutive errors`,
+          type: 'error'
+        });
         break;
       }
       
@@ -208,9 +374,27 @@ app.post("/api/share", async (req, res) => {
     }
   }
 
+  // Process completed
+  processData.status = 'completed';
+  processData.progress = 100;
+  processData.successful = success;
+  processData.completedAt = new Date().toISOString();
+  processData.duration = Date.now() - new Date(processData.startedAt).getTime();
+  
+  processData.logs.push({
+    time: new Date().toISOString(),
+    message: `Process completed: ${success} successful shares out of ${limitNum} attempted`,
+    type: 'success'
+  });
+
   console.log(`🎯 Completed: ${success} successful shares out of ${limitNum} attempted`);
   
-  // Generate appropriate message
+  // Move from active to completed
+  activeProcesses.delete(processId);
+  completedProcesses.push(processData);
+  cleanupOldProcesses();
+  
+  // Generate response message
   let message;
   if (isUnlimited) {
     message = `✅ Unlimited sharing completed. Successfully shared ${success} times.`;
@@ -224,9 +408,33 @@ app.post("/api/share", async (req, res) => {
     message: message,
     success_count: success,
     total_attempted: limitNum,
-    unlimited_mode: isUnlimited
+    unlimited_mode: isUnlimited,
+    process_id: processId
   });
 });
+
+// Cleanup interval for stale processes (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000;
+  
+  for (const [id, process] of activeProcesses.entries()) {
+    const startTime = new Date(process.startedAt).getTime();
+    if (now - startTime > oneHour) {
+      // Process is stale (older than 1 hour)
+      process.status = 'stale';
+      process.logs.push({
+        time: new Date().toISOString(),
+        message: 'Process marked as stale (running for more than 1 hour)',
+        type: 'warning'
+      });
+      
+      activeProcesses.delete(id);
+      completedProcesses.push(process);
+      cleanupOldProcesses();
+    }
+  }
+}, 5 * 60 * 1000); // 5 minutes
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
@@ -234,10 +442,11 @@ app.listen(port, () => {
   console.log(`🚀 Facebook Share Tool Server Started`);
   console.log(`📡 Port: ${port}`);
   console.log(`🌐 http://localhost:${port}`);
-  console.log(`⚙️  Configuration:`);
-  console.log(`   • Shares Range: 100 - 10,000`);
-  console.log(`   • No Limit Mode: Enabled (max 10k)`);
-  console.log(`   • Delay Range: 1ms - 10,000ms`);
-  console.log(`   • Default Delay: 1ms`);
+  console.log(`⚙️  Features:`);
+  console.log(`   • Multi-User Processing Dashboard`);
+  console.log(`   • Real-time Progress Tracking`);
+  console.log(`   • 100-10,000 Shares Range`);
+  console.log(`   • No Limit Mode`);
+  console.log(`   • Process History`);
   console.log(`=========================================`);
 });
