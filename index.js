@@ -386,6 +386,59 @@ app.post("/api/share", async (req, res) => {
   });
 });
 
+app.post('/api/clear-processes', (req, res) => {
+  try {
+    const { clearType = 'all', olderThanHours = 1 } = req.body;
+    
+    let clearedCount = 0;
+    const now = Date.now();
+    const olderThanMs = olderThanHours * 60 * 60 * 1000;
+    
+    if (clearType === 'completed') {
+      const beforeCount = completedProcesses.length;
+      const filtered = completedProcesses.filter(process => {
+        const isOld = process.completedAt && 
+                     (now - new Date(process.completedAt).getTime()) > olderThanMs;
+        return process.status !== 'completed' || !isOld;
+      });
+      
+      clearedCount = beforeCount - filtered.length;
+      completedProcesses.length = 0;
+      completedProcesses.push(...filtered);
+      
+    } else if (clearType === 'failed') {
+      const beforeCount = completedProcesses.length;
+      const filtered = completedProcesses.filter(process => process.status !== 'failed');
+      
+      clearedCount = beforeCount - filtered.length;
+      completedProcesses.length = 0;
+      completedProcesses.push(...filtered);
+      
+    } else {
+      clearedCount = completedProcesses.length;
+      completedProcesses.length = 0;
+    }
+    
+    console.log(`🗑️ Cleared ${clearedCount} processes (type: ${clearType})`);
+    
+    res.json({
+      status: true,
+      message: `Successfully cleared ${clearedCount} processes`,
+      clearedCount: clearedCount,
+      remainingCount: completedProcesses.length,
+      activeCount: activeProcesses.size
+    });
+    
+  } catch (error) {
+    console.error('❌ Error clearing processes:', error);
+    res.status(500).json({
+      status: false,
+      message: 'Failed to clear processes',
+      error: error.message
+    });
+  }
+});
+
 setInterval(() => {
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
@@ -419,5 +472,6 @@ app.listen(port, () => {
   console.log(`   • 100-10,000 Shares Range`);
   console.log(`   • No Limit Mode`);
   console.log(`   • Process History`);
+  console.log(`   • Clear Old Processes API`);
   console.log(`=========================================`);
 });
