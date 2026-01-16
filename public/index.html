@@ -168,6 +168,72 @@
                 opacity: 1;
             }
         }
+        
+        /* Switch toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+        
+        input:checked + .slider {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .slider.round {
+            border-radius: 34px;
+        }
+        
+        .slider.round:before {
+            border-radius: 50%;
+        }
+        
+        /* Custom number input buttons */
+        .number-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .number-btn:hover {
+            background-color: #e5e7eb !important;
+            transform: scale(1.05);
+        }
+        
+        .number-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen pt-16">
@@ -288,7 +354,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <h3 class="font-bold text-gray-800">Default Delay</h3>
-                                <p class="text-3xl font-bold text-green-600" id="default-delay">1000ms</p>
+                                <p class="text-3xl font-bold text-green-600" id="default-delay">1ms</p>
                             </div>
                             <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                                 <i class="fas fa-clock text-green-600 text-xl"></i>
@@ -304,19 +370,19 @@
                         <div>
                             <label class="block text-gray-700 mb-2">Default Delay (milliseconds)</label>
                             <div class="flex items-center space-x-4">
-                                <input type="range" min="500" max="5000" step="100" value="1000" 
+                                <input type="range" min="1" max="1000" step="1" value="1" 
                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
                                        id="delay-range">
-                                <span class="text-lg font-bold text-blue-600 min-w-[80px]" id="delay-value">1000ms</span>
+                                <span class="text-lg font-bold text-blue-600 min-w-[80px]" id="delay-value">1ms</span>
                             </div>
                             <div class="flex justify-between text-sm text-gray-500 mt-2">
+                                <span>Instant (1ms)</span>
                                 <span>Fast (500ms)</span>
-                                <span>Medium (1000ms)</span>
-                                <span>Slow (5000ms)</span>
+                                <span>Slow (1000ms)</span>
                             </div>
                             <p class="text-sm text-gray-600 mt-2">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                Longer delays are safer and reduce the chance of being detected by Facebook
+                                <strong>Warning:</strong> Very low delays (1ms) may cause rate limiting by Facebook
                             </p>
                         </div>
                     </div>
@@ -354,6 +420,22 @@
                                 Enter the full URL of the Facebook post you want to share. Make sure it's a public post or one you have access to.
                             </p>
                         </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-xl border border-green-200 slide-in-left">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                                <i class="fas fa-infinity text-green-600"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800">No Limit Feature</h3>
+                        </div>
+                        <p class="text-gray-600">
+                            <strong>New:</strong> Use the "No Limit" option to share continuously until stopped. Perfect for maximum reach!
+                        </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Note: Facebook may detect and limit accounts using this feature excessively
+                        </p>
                     </div>
                     
                     <div class="text-center mt-10">
@@ -401,7 +483,26 @@
                             />
                         </div>
                         
-                        <div class="grid md:grid-cols-2 gap-6">
+                        <!-- No Limit Toggle -->
+                        <div class="slide-in-left">
+                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-4">
+                                        <i class="fas fa-infinity text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800">No Limit Mode</h3>
+                                        <p class="text-sm text-gray-600">Share continuously until stopped</p>
+                                    </div>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="no-limit-toggle">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-6" id="limit-section">
                             <div class="slide-in-left">
                                 <label class="block text-gray-700 font-medium mb-2">
                                     <i class="fas fa-bullhorn mr-2"></i>Number of Shares
@@ -411,18 +512,30 @@
                                         type="number" 
                                         id="limit" 
                                         class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                                        min="1" 
-                                        max="100" 
-                                        value="10"
+                                        min="100" 
+                                        max="10000" 
+                                        value="1000"
                                         required
                                     />
                                     <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-1">
-                                        <button type="button" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded" onclick="document.getElementById('limit').stepUp()">+</button>
-                                        <button type="button" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded" onclick="document.getElementById('limit').stepDown()">-</button>
+                                        <button type="button" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded number-btn" onclick="document.getElementById('limit').stepUp(100)">+</button>
+                                        <button type="button" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded number-btn" onclick="document.getElementById('limit').stepDown(100)">-</button>
                                     </div>
                                 </div>
+                                <div class="flex justify-between text-sm text-gray-500 mt-2">
+                                    <span>Min: 100</span>
+                                    <span class="font-medium text-blue-600">Default: 1000</span>
+                                    <span>Max: 10,000</span>
+                                </div>
+                                <div class="flex space-x-2 mt-2">
+                                    <button type="button" class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-all" onclick="document.getElementById('limit').value = '500'">500</button>
+                                    <button type="button" class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-all" onclick="document.getElementById('limit').value = '1000'">1,000</button>
+                                    <button type="button" class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-all" onclick="document.getElementById('limit').value = '5000'">5,000</button>
+                                    <button type="button" class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-all" onclick="document.getElementById('limit').value = '10000'">10,000</button>
+                                </div>
                                 <p class="text-sm text-gray-500 mt-2">
-                                    Recommended: 5-20 shares to avoid rate limiting
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    For safety, start with 500-1000 shares first
                                 </p>
                             </div>
                             
@@ -435,19 +548,31 @@
                                         type="number" 
                                         id="delay" 
                                         class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                                        min="500" 
+                                        min="1" 
                                         max="10000" 
-                                        value="1000"
-                                        step="100"
+                                        value="1"
+                                        step="1"
                                         required
                                     />
                                     <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
                                         <span class="text-gray-500">ms</span>
                                     </div>
                                 </div>
+                                <div class="flex space-x-2 mt-2">
+                                    <button type="button" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-all" onclick="document.getElementById('delay').value = '1'">1ms</button>
+                                    <button type="button" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-all" onclick="document.getElementById('delay').value = '100'">100ms</button>
+                                    <button type="button" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-all" onclick="document.getElementById('delay').value = '500'">500ms</button>
+                                    <button type="button" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-all" onclick="document.getElementById('delay').value = '1000'">1000ms</button>
+                                </div>
                                 <p class="text-sm text-gray-500 mt-2">
-                                    Higher delay = safer but slower (1000ms = 1 second)
+                                    <strong>1ms = Instant</strong> (Fastest but riskiest)
                                 </p>
+                                <div class="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <p class="text-xs text-yellow-700">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        <strong>Warning:</strong> 1000+ shares with 1ms delay may get account blocked
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         
@@ -455,9 +580,14 @@
                             <button 
                                 type="submit" 
                                 class="btn-primary pulse text-white font-bold py-4 px-8 rounded-lg w-full flex items-center justify-center text-lg"
+                                id="submit-btn"
                             >
-                                <i class="fas fa-rocket mr-3"></i> Start Sharing with Delay
+                                <i class="fas fa-rocket mr-3"></i> Start Mass Sharing
                             </button>
+                            <p class="text-center text-sm text-gray-500 mt-2">
+                                <i class="fas fa-calculator mr-1"></i>
+                                Estimated time: <span id="estimated-time">0s</span>
+                            </p>
                         </div>
                     </form>
                     
@@ -477,6 +607,9 @@
                                     <span class="text-sm text-gray-500">
                                         <i class="fas fa-share-alt mr-1"></i>Success rate: <span id="result-rate"></span>
                                     </span>
+                                    <span class="text-sm text-gray-500" id="mode-indicator">
+                                        <i class="fas fa-infinity mr-1"></i>Mode: <span id="mode-text">Limited</span>
+                                    </span>
                                 </div>
                             </div>
                             <div id="result-icon" class="text-4xl"></div>
@@ -488,13 +621,18 @@
                         <div class="flex items-center">
                             <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mr-4"></div>
                             <div>
-                                <p class="font-medium text-gray-800">Processing your request...</p>
-                                <p class="text-gray-600 text-sm">Sharing posts with delay. Please wait.</p>
+                                <p class="font-medium text-gray-800" id="loading-title">Processing your request...</p>
+                                <p class="text-gray-600 text-sm" id="loading-description">Preparing to share posts</p>
                                 <p class="text-blue-600 text-sm font-medium mt-1" id="remaining-shares"></p>
                             </div>
                         </div>
                         <div class="mt-4 bg-gray-200 rounded-full h-2">
                             <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full w-0 transition-all duration-300"></div>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button id="stop-button" class="bg-red-500 hover:bg-red-600 text-white py-2 px-6 rounded-lg hidden">
+                                <i class="fas fa-stop mr-2"></i>Stop Sharing
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -525,29 +663,41 @@
                         <div class="p-5 bg-purple-50 rounded-xl slide-in-right">
                             <h3 class="font-bold text-gray-800 mb-2 flex items-center">
                                 <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">2</span>
-                                How to Use Delay Setting
+                                How to Use No Limit Mode
                             </h3>
                             <ol class="list-decimal pl-10 space-y-2 text-gray-600">
-                                <li><strong>500ms</strong> - Fast but higher risk of detection</li>
-                                <li><strong>1000ms</strong> - Balanced speed and safety (recommended)</li>
-                                <li><strong>2000ms+</strong> - Slow but safest option</li>
-                                <li>Delay adds time between each share operation</li>
-                                <li>Total time = (Number of shares × Delay) + processing time</li>
+                                <li><strong>Toggle ON</strong> the "No Limit Mode" switch</li>
+                                <li>The tool will share continuously until stopped</li>
+                                <li>Maximum safety limit: 1000 shares (to prevent abuse)</li>
+                                <li>You can stop manually anytime using the stop button</li>
+                                <li>The tool auto-stops on Facebook errors</li>
                             </ol>
+                            <div class="mt-3 p-3 bg-purple-100 rounded-lg">
+                                <p class="text-sm text-purple-700">
+                                    <i class="fas fa-lightbulb mr-2"></i>
+                                    <strong>Tip:</strong> Use No Limit mode with 1ms delay for maximum speed
+                                </p>
+                            </div>
                         </div>
                         
                         <div class="p-5 bg-green-50 rounded-xl slide-in-left">
                             <h3 class="font-bold text-gray-800 mb-2 flex items-center">
                                 <span class="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">3</span>
-                                Best Practices
+                                New: 100-10,000 Shares Limit
                             </h3>
                             <ul class="list-disc pl-10 space-y-2 text-gray-600">
-                                <li>Start with small batches (5-10 shares)</li>
-                                <li>Use delays of at least 1000ms between shares</li>
-                                <li>Test with one share first to verify cookie works</li>
-                                <li>Use different cookies for large sharing operations</li>
-                                <li>Monitor your Facebook account for any warnings</li>
+                                <li><strong>100 shares</strong> - Minimum (for testing)</li>
+                                <li><strong>500-1000 shares</strong> - Recommended for beginners</li>
+                                <li><strong>5000 shares</strong> - Medium scale sharing</li>
+                                <li><strong>10,000 shares</strong> - Maximum limit (use with caution)</li>
+                                <li>Quick buttons for common share counts</li>
                             </ul>
+                            <div class="mt-3 p-3 bg-yellow-100 rounded-lg">
+                                <p class="text-sm text-yellow-700">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>Warning:</strong> 10,000 shares with 1ms delay = 10 seconds total. Facebook WILL detect this!
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -588,6 +738,7 @@
                             </h3>
                             <ul class="list-disc pl-5 space-y-1 text-red-600">
                                 <li>Don't use with your main Facebook account</li>
+                                <li>Don't use 1ms delay with 10,000 shares</li>
                                 <li>Don't share illegal or harmful content</li>
                                 <li>Don't spam or share excessively</li>
                                 <li>Don't ignore Facebook's warnings</li>
@@ -600,8 +751,9 @@
                             </h3>
                             <ul class="list-disc pl-5 space-y-1 text-green-600">
                                 <li>Use with disposable/test accounts</li>
-                                <li>Start with small share counts</li>
-                                <li>Use appropriate delays (1000ms+)</li>
+                                <li>Start with 1000ms delay for testing</li>
+                                <li>Test with 500 shares first</li>
+                                <li>Use appropriate delays (1000ms+) for safety</li>
                                 <li>Monitor your account activity</li>
                             </ul>
                         </div>
@@ -619,13 +771,13 @@
                 </p>
                 <div class="flex justify-center space-x-4 mt-4">
                     <span class="text-xs text-gray-400">
-                        <i class="fas fa-shield-alt mr-1"></i>Delay Feature: Enabled
+                        <i class="fas fa-infinity mr-1"></i>No Limit: Enabled
                     </span>
                     <span class="text-xs text-gray-400">
-                        <i class="fas fa-bolt mr-1"></i>Animation: Enabled
+                        <i class="fas fa-bolt mr-1"></i>1ms Delay: Enabled
                     </span>
                     <span class="text-xs text-gray-400">
-                        <i class="fas fa-mobile-alt mr-1"></i>Responsive Design
+                        <i class="fas fa-share-alt mr-1"></i>10K Max Shares
                     </span>
                 </div>
             </div>
@@ -633,6 +785,10 @@
     </div>
 
     <script>
+        // Variables
+        let isUnlimited = false;
+        let sharingActive = false;
+        
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
             const navbar = document.querySelector('.navbar');
@@ -651,6 +807,70 @@
             mobileMenu.classList.toggle('hidden');
             mobileMenuButton.classList.toggle('active');
         });
+        
+        // No Limit Toggle
+        const noLimitToggle = document.getElementById('no-limit-toggle');
+        const limitInput = document.getElementById('limit');
+        const limitSection = document.getElementById('limit-section');
+        const submitBtn = document.getElementById('submit-btn');
+        const estimatedTimeElement = document.getElementById('estimated-time');
+        
+        noLimitToggle.addEventListener('change', function() {
+            isUnlimited = this.checked;
+            
+            if (isUnlimited) {
+                // Disable limit input for unlimited mode
+                limitInput.disabled = true;
+                limitInput.value = "∞";
+                limitInput.classList.add('opacity-50', 'cursor-not-allowed');
+                limitSection.classList.add('opacity-50');
+                submitBtn.innerHTML = '<i class="fas fa-infinity mr-3"></i> Start Unlimited Sharing';
+                submitBtn.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-pink-600');
+                estimatedTimeElement.textContent = '∞';
+                
+                // Show warning
+                alert('⚠️ WARNING: Unlimited mode will share continuously until stopped or until Facebook blocks you. Use with caution!');
+            } else {
+                // Enable limit input
+                limitInput.disabled = false;
+                limitInput.value = "1000";
+                limitInput.classList.remove('opacity-50', 'cursor-not-allowed');
+                limitSection.classList.remove('opacity-50');
+                submitBtn.innerHTML = '<i class="fas fa-rocket mr-3"></i> Start Mass Sharing';
+                submitBtn.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-pink-600');
+                calculateEstimatedTime();
+            }
+        });
+        
+        // Calculate estimated time function
+        function calculateEstimatedTime() {
+            const limit = parseInt(document.getElementById('limit').value) || 1000;
+            const delay = parseInt(document.getElementById('delay').value) || 1;
+            
+            if (isUnlimited) {
+                estimatedTimeElement.textContent = '∞';
+                return;
+            }
+            
+            // Calculate total time in seconds
+            const totalSeconds = Math.round((limit * delay) / 1000);
+            
+            if (totalSeconds < 60) {
+                estimatedTimeElement.textContent = `${totalSeconds} seconds`;
+            } else if (totalSeconds < 3600) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                estimatedTimeElement.textContent = `${minutes}m ${seconds}s`;
+            } else {
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                estimatedTimeElement.textContent = `${hours}h ${minutes}m`;
+            }
+        }
+        
+        // Update estimated time when limit or delay changes
+        document.getElementById('limit').addEventListener('input', calculateEstimatedTime);
+        document.getElementById('delay').addEventListener('input', calculateEstimatedTime);
         
         // Navigation function
         function navigateTo(sectionId) {
@@ -723,6 +943,7 @@
             delayValue.textContent = value + 'ms';
             defaultDelay.textContent = value + 'ms';
             delayInput.value = value;
+            calculateEstimatedTime();
         });
         
         delayInput.addEventListener('input', function() {
@@ -730,6 +951,7 @@
             delayRange.value = value;
             delayValue.textContent = value + 'ms';
             defaultDelay.textContent = value + 'ms';
+            calculateEstimatedTime();
         });
         
         // Update stats
@@ -743,30 +965,93 @@
             document.getElementById('success-rate').textContent = successRate + '%';
         }
         
+        // Stop button functionality
+        document.getElementById('stop-button').addEventListener('click', function() {
+            sharingActive = false;
+            this.classList.add('hidden');
+            alert('Sharing stopped by user.');
+        });
+        
         // Form submission
         document.getElementById('share-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            if (sharingActive) {
+                alert('Sharing is already in progress. Please wait or stop the current operation.');
+                return;
+            }
+            
             const cookie = document.getElementById('cookie').value;
             const link = document.getElementById('link').value;
-            const limit = document.getElementById('limit').value;
+            const limit = isUnlimited ? 0 : document.getElementById('limit').value;
             const delay = document.getElementById('delay').value;
             
             // Validate inputs
-            if (delay < 500) {
-                alert('Delay must be at least 500ms for safety');
+            if (!cookie.trim()) {
+                alert('Please enter your Facebook cookie');
                 return;
             }
             
-            // Calculate estimated time
-            const estimatedTime = Math.round((limit * delay) / 1000);
-            if (estimatedTime > 60 && !confirm(`This will take approximately ${estimatedTime} seconds. Continue?`)) {
+            if (!link.trim()) {
+                alert('Please enter a Facebook post link');
                 return;
             }
+            
+            if (delay < 1) {
+                alert('Delay must be at least 1ms');
+                return;
+            }
+            
+            if (!isUnlimited && (limit < 100 || limit > 10000)) {
+                alert('Please enter a valid number of shares (100-10000)');
+                return;
+            }
+            
+            // Warning for 1ms delay with large shares
+            if (delay == 1 && limit > 5000) {
+                if (!confirm('⚠️ EXTREME WARNING: Using 1ms delay with ' + limit + ' shares will complete in ' + Math.round(limit/1000) + ' seconds! Facebook WILL block your account. Continue?')) {
+                    return;
+                }
+            } else if (delay == 1) {
+                if (!confirm('⚠️ WARNING: Using 1ms delay is extremely fast and may get your account blocked immediately. Are you sure?')) {
+                    return;
+                }
+            }
+            
+            // Warning for unlimited mode
+            if (isUnlimited) {
+                if (!confirm('⚠️ WARNING: Unlimited mode will share continuously until stopped. This may get your account permanently banned. Continue?')) {
+                    return;
+                }
+            }
+            
+            // Warning for large share counts
+            if (!isUnlimited && limit >= 5000) {
+                if (!confirm('⚠️ WARNING: ' + limit + ' shares is a very large amount. This may get your account blocked. Continue?')) {
+                    return;
+                }
+            }
+            
+            sharingActive = true;
             
             // Show loading indicator
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').classList.add('hidden');
+            
+            // Update loading text based on mode
+            const loadingTitle = document.getElementById('loading-title');
+            const loadingDesc = document.getElementById('loading-description');
+            const stopButton = document.getElementById('stop-button');
+            
+            if (isUnlimited) {
+                loadingTitle.textContent = 'Starting Unlimited Sharing...';
+                loadingDesc.textContent = 'Sharing continuously until stopped';
+                stopButton.classList.remove('hidden');
+            } else {
+                loadingTitle.textContent = 'Starting Mass Sharing...';
+                loadingDesc.textContent = `Sharing ${limit.toLocaleString()} posts`;
+                stopButton.classList.add('hidden');
+            }
             
             // Show remaining shares
             const remainingElement = document.getElementById('remaining-shares');
@@ -774,14 +1059,19 @@
             
             // Animate progress bar
             let progress = 0;
-            const totalProgress = 100;
             const progressInterval = setInterval(() => {
-                if (progress < 90) {
+                if (progress < 90 && sharingActive) {
                     progress += 1;
                     progressBar.style.width = `${progress}%`;
-                    remainingElement.textContent = `Estimated time remaining: ${Math.round((100 - progress) / 100 * estimatedTime)}s`;
+                    
+                    if (isUnlimited) {
+                        remainingElement.textContent = 'Sharing continuously... Click STOP to end';
+                    } else {
+                        const totalSeconds = Math.round((limit * delay) / 1000);
+                        remainingElement.textContent = `Estimated time remaining: ${Math.round((100 - progress) / 100 * totalSeconds)}s`;
+                    }
                 }
-            }, estimatedTime * 10);
+            }, 500);
             
             try {
                 const response = await fetch('/api/share', {
@@ -789,7 +1079,13 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ cookie, link, limit, delay })
+                    body: JSON.stringify({ 
+                        cookie, 
+                        link, 
+                        limit: isUnlimited ? 0 : limit, 
+                        delay,
+                        unlimited: isUnlimited
+                    })
                 });
                 
                 const data = await response.json();
@@ -813,6 +1109,8 @@
                 // Complete progress bar
                 clearInterval(progressInterval);
                 progressBar.style.width = '100%';
+                sharingActive = false;
+                stopButton.classList.add('hidden');
                 
                 // Hide loading indicator after delay
                 setTimeout(() => {
@@ -825,14 +1123,27 @@
                     const resultIcon = document.getElementById('result-icon');
                     const resultDelay = document.getElementById('result-delay');
                     const resultRate = document.getElementById('result-rate');
+                    const modeText = document.getElementById('mode-text');
+                    const modeIndicator = document.getElementById('mode-indicator');
                     
                     if (data.status) {
                         resultDiv.classList.remove('hidden', 'border-red-200', 'bg-red-50');
                         resultDiv.classList.add('border-green-200', 'bg-green-50');
                         resultMsg.textContent = data.message;
-                        resultDetails.textContent = `Successfully shared ${data.success_count} out of ${limit} times`;
                         resultDelay.textContent = `${delay}ms`;
-                        resultRate.textContent = `${Math.round((data.success_count / limit) * 100)}%`;
+                        
+                        if (isUnlimited) {
+                            resultDetails.textContent = `Shared ${data.success_count.toLocaleString()} times continuously`;
+                            modeText.textContent = 'Unlimited';
+                            modeIndicator.classList.remove('hidden');
+                        } else {
+                            resultDetails.textContent = `Successfully shared ${data.success_count.toLocaleString()} out of ${parseInt(limit).toLocaleString()} times`;
+                            const rate = limit > 0 ? Math.round((data.success_count / limit) * 100) : 0;
+                            resultRate.textContent = `${rate}%`;
+                            modeText.textContent = 'Limited';
+                            modeIndicator.classList.remove('hidden');
+                        }
+                        
                         resultIcon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
                     } else {
                         resultDiv.classList.remove('hidden', 'border-green-200', 'bg-green-50');
@@ -841,6 +1152,8 @@
                         resultDetails.textContent = 'Please check your cookie and try again';
                         resultDelay.textContent = `${delay}ms`;
                         resultRate.textContent = '0%';
+                        modeText.textContent = isUnlimited ? 'Unlimited' : 'Limited';
+                        modeIndicator.classList.remove('hidden');
                         resultIcon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
                     }
                     
@@ -854,7 +1167,9 @@
             } catch (error) {
                 console.error('Error:', error);
                 clearInterval(progressInterval);
+                sharingActive = false;
                 document.getElementById('loading').style.display = 'none';
+                stopButton.classList.add('hidden');
                 
                 // Show error
                 const resultDiv = document.getElementById('result');
@@ -864,6 +1179,8 @@
                 document.getElementById('result-details').textContent = error.message;
                 document.getElementById('result-delay').textContent = `${delay}ms`;
                 document.getElementById('result-rate').textContent = '0%';
+                document.getElementById('mode-text').textContent = isUnlimited ? 'Unlimited' : 'Limited';
+                document.getElementById('mode-indicator').classList.remove('hidden');
                 document.getElementById('result-icon').innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
                 
                 // Reset progress bar
@@ -884,6 +1201,15 @@
             } else if (hash === 'stats') {
                 navigateTo('stats');
             }
+            
+            // Set default delay to 1ms
+            delayInput.value = 1;
+            delayRange.value = 1;
+            delayValue.textContent = '1ms';
+            defaultDelay.textContent = '1ms';
+            
+            // Calculate initial estimated time
+            calculateEstimatedTime();
         });
         
         // Add animation on scroll
