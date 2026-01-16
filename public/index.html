@@ -610,6 +610,136 @@
             0%, 100% { border-color: #f59e0b; }
             50% { border-color: #fbbf24; }
         }
+
+        /* ==================== PROCESS CARDS FIX ==================== */
+/* Ensure process cards container doesn't overflow */
+#active-processes, #recent-processes {
+    max-height: 500px; /* Maximum height before scrolling */
+    overflow-y: auto; /* Add scrollbar when needed */
+    min-height: 100px; /* Minimum height */
+}
+
+/* Individual process card styling for better balance */
+.process-card {
+    margin-bottom: 12px;
+    max-width: 100%;
+    word-wrap: break-word; /* Break long words */
+    overflow-wrap: break-word;
+}
+
+/* Make sure process links don't overflow */
+.process-card .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+}
+
+/* Process status badge - ensure it stays in one line */
+.status-badge {
+    white-space: nowrap;
+    flex-shrink: 0; /* Prevent badge from shrinking */
+    margin-left: 8px; /* Add some spacing */
+}
+
+/* Container for process info - flex layout */
+.process-card > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px; /* Add gap between elements */
+}
+
+/* Process user info container */
+.process-card > div:first-child > div:first-child {
+    flex: 1; /* Take available space */
+    min-width: 0; /* Allow text truncation */
+}
+
+/* Responsive adjustments for process cards */
+@media (max-width: 640px) {
+    .process-card {
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    .status-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.5rem;
+    }
+    
+    .process-card > div:first-child {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .process-card > div:first-child > div:first-child {
+        width: 100%;
+    }
+    
+    .status-badge {
+        align-self: flex-start; /* Align badge to start on mobile */
+    }
+}
+
+/* Scrollbar styling for process containers */
+#active-processes::-webkit-scrollbar,
+#recent-processes::-webkit-scrollbar {
+    width: 6px;
+}
+
+#active-processes::-webkit-scrollbar-track,
+#recent-processes::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#active-processes::-webkit-scrollbar-thumb,
+#recent-processes::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#active-processes::-webkit-scrollbar-thumb:hover,
+#recent-processes::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Animation for new process cards */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Apply animation to new process cards */
+.process-card.new-process {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Empty state styling */
+#no-active-processes, #no-recent-processes {
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    border: 2px dashed #dee2e6;
+}
+
+/* Process ID styling */
+.process-card .text-xs span {
+    display: inline-flex;
+    align-items: center;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: monospace;
+}
     </style>
 </head>
 <body class="gradient-bg min-h-screen pt-16">
